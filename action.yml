@@ -1,0 +1,56 @@
+name: Upsert Tagged Releases
+author: Brady Clifford
+description: Creates or updates release tags
+
+# Concept taken from https://github.com/actions/publish-action
+# https://github.com/actions/javascript-action
+
+inputs:
+  github-token:
+    required: true
+    description: Token required to get an authenticated Octokit
+
+  sha:
+    description: SHA to reference by the 'target-tag' and 'additional-target-tags'. If not provided, gets the referenced SHA from the 'source-tag' or defaults to the current context's SHA.
+    required: false
+
+  source-tag:
+    description: Tag to reference when generating the target tag(s). The 'sha' and 'source-tag' cannot be included together.
+    required: false
+
+  target-tag:
+    description: Tagged release to create based off of the 'source-tag' or 'sha'
+    required: false
+
+  additional-target-tags:
+    description: List of tagged releases to create based off of the 'source-tag' or 'sha'
+    required: false
+
+  include-major:
+    description: Create a tagged release of just the major from the 'source-tag'. i.e. v1
+    default: 'false'
+    required: false
+
+  include-major-minor:
+    description: Create a tagged release of just the major and minor from the 'source-tag'. i.e. v1.2
+    default: 'false'
+    required: false
+
+  force-target:
+    description: Overwrite the 'target-tag' if it already exists
+    default: 'false'
+    required: false
+
+  force-additional-targets:
+    description: Overwrite the target tags in the 'additional-taget-tags' input if it already exists
+    default: 'true'
+    required: false
+
+  fail-on-invalid-version:
+    description: Forces semver validation check on the 'source-tag' and 'target-tag'
+    default: 'true'
+    required: false
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

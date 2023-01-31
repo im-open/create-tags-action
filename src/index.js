@@ -17,13 +17,13 @@ core.setSecret(token);
 const shaInput = core.getInput('sha');
 const sourceTagInput = core.getInput('source-tag');
 const targetTagInput = core.getInput('target-tag');
-const targetTagsInput = core.getMultilineInput('target-tags');
+const additionalTargetTagInputs = core.getMultilineInput('additional-target-tags');
 
-const includeMajorTag = core.getBooleanInput('include-major-tag');
-const includeMajorMinorTag = core.getBooleanInput('include-major-minor-tag');
+const includeMajorTag = core.getBooleanInput('include-major');
+const includeMajorMinorTag = core.getBooleanInput('include-major-minor');
 
-const forceMainTargetTagCreation = core.getBooleanInput('force-target-tag');
-const forceTargetTagsCreation = core.getBooleanInput('force-target-tags');
+const forceMainTargetTagCreation = core.getBooleanInput('force-target');
+const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional-targets');
 
 const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
 
@@ -39,12 +39,13 @@ function validateInputs() {
     );
 
   if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
+  if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
 }
 
 function provisionTargetTags() {
-  const targetTags = targetTagsInput
+  const targetTags = additionalTargetTagInputs
     .filter(tag => tag)
-    .map(tag => TargetTag.for(tag, { canOverwrite: forceTargetTagsCreation }));
+    .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
 
   if (targetTagInput) {
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
@@ -71,7 +72,12 @@ async function run() {
   const octokit = github.getOctokit(token);
   if (sourceTagInput) await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
 
-  const sha = shaInput ?? (await getShaFromTag(octokit, sourceTagInput));
+  const sha =
+    shaInput ??
+    (await getShaFromTag(octokit, sourceTagInput)) ??
+    github.context.eventName === 'pull_request'
+      ? github.context.payload.pull_request.head.sha
+      : github.context.sha;
 
   const targetTags = provisionTargetTags();
 
@@ -84,7 +90,6 @@ async function run() {
 
   for (const tag of targetTags) {
     if (await isTaggedReleasePublished(octokit, tag)) tag.markPublished();
-
     if (await tagExists(octokit, tag)) tag.found();
   }
 
