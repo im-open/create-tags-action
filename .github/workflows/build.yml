@@ -1,0 +1,49 @@
+name: CI - Build
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  # https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    runs-on: ${{ matrix.operating-system }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: npm
+
+      - name: npm ci 🚀
+        run: npm ci --prefer-offline --no-audit --ignore-scripts
+
+      - name: Format and Build
+        run: npm run all
+
+      - name: Compare the expected and actual results
+        run: |
+          if [ "$(git diff --ignore-space-at-eol | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build.  See status below:"
+            git diff
+            exit 1
+          fi
+        id: diff

@@ -1,0 +1,3 @@
+* @im-enrollment/ifp-tech-lead 
+/.github/CODEOWNERS @im-enrollment/ifp-tech-lead @im-enrollment/ifp-team-manager
+/.husky @im-enrollment/ifp-tech-lead @im-enrollment/ifp-team-manager
