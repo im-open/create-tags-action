@@ -7,8 +7,8 @@ import {
   isTaggedReleasePublished,
   validateIfTaggedReleaseIsPublished,
   createTag
-} from './api';
-import { validateSemverVersionFromTag, getMajorTag, getMajorMinorTag } from './version';
+} from './api-utils';
+import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
 import TargetTag from './TargetTag';
 
 const token = core.getInput('github-token', { required: true });
@@ -58,7 +58,7 @@ function provisionTargetTags() {
   }
 
   if (includeMajorMinorTag) {
-    const majorMinorTag = getMajorMinorTag(sourceTagInput);
+    const majorMinorTag = getMajorAndMinorTag(sourceTagInput);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput('major-minor-tag', majorMinorTag);
   }

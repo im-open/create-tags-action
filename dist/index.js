@@ -8158,7 +8158,7 @@ var require_parse = __commonJS({
 var core2 = __toESM(require_core());
 var github = __toESM(require_github());
 
-// src/api.ts
+// src/api-utils.ts
 var core = __toESM(require_core());
 var import_github = __toESM(require_github());
 async function getTag(octokit, tag) {
@@ -8236,10 +8236,10 @@ async function createTag(octokit, tag, sha) {
   core.info("Finished creating the tag.");
 }
 
-// src/version.ts
+// src/version-utils.ts
 var import_parse3 = __toESM(require_parse());
 var import_semver = __toESM(require_semver());
-function isSemVer(value) {
+function isSemver(value) {
   if (!value)
     return false;
   if (value instanceof import_semver.default)
@@ -8247,12 +8247,12 @@ function isSemVer(value) {
   return (0, import_parse3.default)(value) ? true : false;
 }
 function getMajorTag(tag) {
-  if (!isSemVer)
+  if (!isSemver)
     throw new TypeError(`Tag [${tag}] is not a semver`);
   return tag.split(".")[0];
 }
-function getMajorMinorTag(tag) {
-  if (!isSemVer)
+function getMajorAndMinorTag(tag) {
+  if (!isSemver)
     throw new TypeError(`Tag [${tag}] is not a semver`);
   return tag.split(".").slice(0, 2).join(".");
 }
@@ -8265,7 +8265,7 @@ function validateSemverVersionFromTag(tag) {
     throw new Error(`Tag [${tag}] doesn't satisfy semantic versioning specification`);
   }
   if (!isStableSemverVersion(semverVersion)) {
-    throw new Error("It is not allowed to specify pre-release tag");
+    throw new Error(`It is not allowed to specify pre-release version tag [${tag}]`);
   }
 }
 
@@ -8303,7 +8303,7 @@ var _TargetTag = class {
     return this.value;
   }
   static for(target, options) {
-    return isSemVer(target) ? new TargetVersionedTag(target, options) : new _TargetTag(target, options);
+    return isSemver(target) ? new TargetVersionedTag(target, options) : new _TargetTag(target, options);
   }
 };
 var TargetTag = _TargetTag;
@@ -8315,7 +8315,7 @@ var TargetVersionedTag = class extends TargetTag {
     super(value, options);
     __privateAdd(this, _semVer, void 0);
     __privateSet(this, _semVer, (0, import_parse4.semverParse)(value));
-    if (!isSemVer(__privateGet(this, _semVer)))
+    if (!isSemver(__privateGet(this, _semVer)))
       throw new TypeError(`value [${value}] must be a semver`);
   }
   get isStable() {
@@ -8361,7 +8361,7 @@ function provisionTargetTags() {
     core2.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag) {
-    const majorMinorTag = getMajorMinorTag(sourceTagInput);
+    const majorMinorTag = getMajorAndMinorTag(sourceTagInput);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core2.setOutput("major-minor-tag", majorMinorTag);
   }

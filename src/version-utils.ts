@@ -1,19 +1,19 @@
 import semverParse from 'semver/functions/parse';
 import SemVer from 'semver/classes/semver';
 
-export function isSemVer(value: string | SemVer | null | undefined) {
+export function isSemver(value: string | SemVer | null | undefined) {
   if (!value) return false;
   if (value instanceof SemVer) return true;
   return semverParse(value) ? true : false;
 }
 
 export function getMajorTag(tag: string) {
-  if (!isSemVer) throw new TypeError(`Tag [${tag}] is not a semver`);
+  if (!isSemver) throw new TypeError(`Tag [${tag}] is not a semver`);
   return tag.split('.')[0];
 }
 
-export function getMajorMinorTag(tag: string) {
-  if (!isSemVer) throw new TypeError(`Tag [${tag}] is not a semver`);
+export function getMajorAndMinorTag(tag: string) {
+  if (!isSemver) throw new TypeError(`Tag [${tag}] is not a semver`);
   return tag.split('.').slice(0, 2).join('.');
 }
 
@@ -28,6 +28,6 @@ export function validateSemverVersionFromTag(tag: string): void {
   }
 
   if (!isStableSemverVersion(semverVersion)) {
-    throw new Error('It is not allowed to specify pre-release tag');
+    throw new Error(`It is not allowed to specify pre-release version tag [${tag}]`);
   }
 }

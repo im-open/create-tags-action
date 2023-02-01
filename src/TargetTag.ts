@@ -1,6 +1,6 @@
 import { semverParse } from 'semver/functions/parse';
 import { SemVer } from 'semver/classes/semver';
-import { isSemVer, isStableSemverVersion } from './version';
+import { isSemver, isStableSemverVersion } from './version-utils';
 
 interface TargetTagOptions {
   canOverwrite: boolean;
@@ -48,7 +48,7 @@ export default class TargetTag {
   }
 
   static for(target: string, options: TargetTagOptions) {
-    return isSemVer(target)
+    return isSemver(target)
       ? new TargetVersionedTag(target, options)
       : new TargetTag(target, options);
   }
@@ -61,7 +61,7 @@ export class TargetVersionedTag extends TargetTag {
     super(value, options);
 
     this.#semVer = semverParse(value);
-    if (!isSemVer(this.#semVer)) throw new TypeError(`value [${value}] must be a semver`);
+    if (!isSemver(this.#semVer)) throw new TypeError(`value [${value}] must be a semver`);
   }
 
   get isStable() {
