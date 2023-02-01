@@ -1,5 +1,5 @@
-import { semverParse } from 'semver/functions/parse';
-import { SemVer } from 'semver/classes/semver';
+import semverParse from 'semver/functions/parse';
+import SemVer from 'semver/classes/semver';
 import { isSemver, isStableSemverVersion } from './version-utils';
 
 interface TargetTagOptions {
@@ -14,7 +14,7 @@ export default class TargetTag {
   #published: boolean;
 
   constructor(value: string, { canOverwrite = false }: TargetTagOptions = { canOverwrite: false }) {
-    if (!value) throw new TypeError('value cannot be empty');
+    if (!value?.trim()) throw new TypeError('value cannot be empty');
 
     this.value = value;
     this.isVersion = false;
@@ -47,7 +47,7 @@ export default class TargetTag {
     return this.value;
   }
 
-  static for(target: string, options: TargetTagOptions) {
+  static for(target: string, options?: TargetTagOptions) {
     return isSemver(target)
       ? new TargetVersionedTag(target, options)
       : new TargetTag(target, options);
@@ -57,7 +57,7 @@ export default class TargetTag {
 export class TargetVersionedTag extends TargetTag {
   readonly #semVer: SemVer;
 
-  constructor(value: string, options: TargetTagOptions | undefined) {
+  constructor(value: string, options?: TargetTagOptions | undefined) {
     super(value, options);
 
     this.#semVer = semverParse(value);

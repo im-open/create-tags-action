@@ -8276,7 +8276,7 @@ var _TargetTag = class {
   constructor(value, { canOverwrite = false } = { canOverwrite: false }) {
     __privateAdd(this, _exists, void 0);
     __privateAdd(this, _published, void 0);
-    if (!value)
+    if (!value?.trim())
       throw new TypeError("value cannot be empty");
     this.value = value;
     this.isVersion = false;
@@ -8314,7 +8314,7 @@ var TargetVersionedTag = class extends TargetTag {
   constructor(value, options) {
     super(value, options);
     __privateAdd(this, _semVer, void 0);
-    __privateSet(this, _semVer, (0, import_parse4.semverParse)(value));
+    __privateSet(this, _semVer, (0, import_parse4.default)(value));
     if (!isSemver(__privateGet(this, _semVer)))
       throw new TypeError(`value [${value}] must be a semver`);
   }
@@ -8351,15 +8351,18 @@ function validateInputs() {
 function provisionTargetTags() {
   const targetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
   if (targetTagInput) {
+    console.debug(`Processsing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
   if (includeMajorTag) {
     const majorTag = getMajorTag(sourceTagInput);
+    console.debug(`Processsing major-tag [${majorTag}]`);
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core2.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag) {
     const majorMinorTag = getMajorAndMinorTag(sourceTagInput);
+    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core2.setOutput("major-minor-tag", majorMinorTag);
   }

@@ -51,12 +51,12 @@ jobs:
         uses: ./ # Uses an action in the root directory
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          target-tag: test1.2.3
+          target-tag: 1.2.3
           additional-target-tags: |
             test-latest
             test-mine
           include-major: true
-          force-target: true # overwrites v1.2.3 if it already exists
+          force-target: true # overwrites 1.2.3 if it already exists
 
       - name: Should update 3 releases and create 1 new release
         uses: actions/github-script@v6
@@ -77,7 +77,7 @@ jobs:
               }
             }
 
-            const mainTag = getTag('test1.2.3');
+            const mainTag = getTag('1.2.3');
             const latestTag = getTag('test-latest');
             const mineTag = getTag('test-mine');
 

@@ -46,17 +46,22 @@ function provisionTargetTags() {
     .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
 
   if (targetTagInput) {
+    console.debug(`Processsing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
 
   if (includeMajorTag) {
     const majorTag = getMajorTag(sourceTagInput);
+    console.debug(`Processsing major-tag [${majorTag}]`);
+
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core.setOutput('major-tag', majorTag);
   }
 
   if (includeMajorMinorTag) {
     const majorMinorTag = getMajorAndMinorTag(sourceTagInput);
+
+    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput('major-minor-tag', majorMinorTag);
   }
