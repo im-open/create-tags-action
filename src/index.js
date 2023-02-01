@@ -42,7 +42,7 @@ function provisionTargetTags() {
   const targetTags = [];
 
   if (targetTagInput) {
-    console.debug(`Processsing target-tag [${targetTagInput}]`);
+    console.debug(`Processing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
 
@@ -50,7 +50,7 @@ function provisionTargetTags() {
 
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    console.debug(`Processsing major-tag [${majorTag}]`);
+    console.debug(`Processing major-tag [${majorTag}]`);
 
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core.setOutput('major-tag', majorTag);
@@ -59,7 +59,7 @@ function provisionTargetTags() {
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
-    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
+    console.debug(`Processing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput('major-minor-tag', majorMinorTag);
   }
@@ -68,7 +68,7 @@ function provisionTargetTags() {
     .filter(tag => tag)
     .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
 
-  console.debug(`Processing additional tags [${additionalTargetTags.join(', ')}]`);
+  console.debug(`Processing additional-target-tags [${additionalTargetTags.join(', ')}]`);
 
   return targetTags.concat(additionalTargetTags);
 }
@@ -99,6 +99,7 @@ async function run() {
     return;
   }
 
+  console.debug('Validating references...');
   for (const tag of targetTags) {
     if (await isTaggedReleasePublished(octokit, tag)) tag.markPublished();
     if (await tagExists(octokit, tag)) tag.found();
@@ -122,6 +123,7 @@ async function run() {
     return;
   }
 
+  console.debug('Upserting references...');
   targetTags.forEach(tag => createTag(tag));
   core.info(`Tags [${targetTags.join(', ')}] now point to ${sourceTagInput || sha}`);
 }

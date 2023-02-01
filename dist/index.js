@@ -8350,24 +8350,24 @@ function validateInputs() {
 function provisionTargetTags() {
   const targetTags = [];
   if (targetTagInput) {
-    console.debug(`Processsing target-tag [${targetTagInput}]`);
+    console.debug(`Processing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
   const referenceTag = targetTagInput || sourceTagInput;
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    console.debug(`Processsing major-tag [${majorTag}]`);
+    console.debug(`Processing major-tag [${majorTag}]`);
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core2.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
-    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
+    console.debug(`Processing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core2.setOutput("major-minor-tag", majorMinorTag);
   }
   const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
-  console.debug(`Processing additional tags [${additionalTargetTags.join(", ")}]`);
+  console.debug(`Processing additional-target-tags [${additionalTargetTags.join(", ")}]`);
   return targetTags.concat(additionalTargetTags);
 }
 async function run() {
@@ -8385,6 +8385,7 @@ async function run() {
     core2.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(", ")}]`);
     return;
   }
+  console.debug("Validating references...");
   for (const tag of targetTags) {
     if (await isTaggedReleasePublished(octokit, tag))
       tag.markPublished();
@@ -8404,6 +8405,7 @@ async function run() {
     failureMessages.forEach((error) => core2.setFailed(error));
     return;
   }
+  console.debug("Upserting references...");
   targetTags.forEach((tag) => createTag(tag));
   core2.info(`Tags [${targetTags.join(", ")}] now point to ${sourceTagInput || sha}`);
 }
