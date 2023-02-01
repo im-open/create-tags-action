@@ -28,8 +28,6 @@ const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional
 const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
 
 function validateInputs() {
-  if (!shaInput && !sourceTagInput) throw new TypeError('A sha or source-tag is required');
-
   if (shaInput && sourceTagInput)
     throw new TypeError('A sha and source-tag cannot be included together');
 
