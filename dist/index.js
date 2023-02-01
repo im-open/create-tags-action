@@ -8309,20 +8309,21 @@ var _TargetTag = class {
 var TargetTag = _TargetTag;
 _exists = new WeakMap();
 _published = new WeakMap();
-var _semVer;
+var _semver;
 var TargetVersionedTag = class extends TargetTag {
   constructor(value, options) {
     super(value, options);
-    __privateAdd(this, _semVer, void 0);
-    __privateSet(this, _semVer, (0, import_parse4.default)(value));
-    if (!isSemver(__privateGet(this, _semVer)))
+    __privateAdd(this, _semver, void 0);
+    const semver = (0, import_parse4.default)(value);
+    if (!isSemver(semver))
       throw new TypeError(`value [${value}] must be a semver`);
+    __privateSet(this, _semver, semver);
   }
-  get isStable() {
-    return isStableSemverVersion(__privateGet(this, _semVer));
+  get isStableVersion() {
+    return isStableSemverVersion(__privateGet(this, _semver));
   }
 };
-_semVer = new WeakMap();
+_semver = new WeakMap();
 
 // src/index.js
 var token = core2.getInput("github-token", { required: true });
@@ -8347,7 +8348,7 @@ function validateInputs() {
     validateSemverVersionFromTag(targetTagInput);
 }
 function provisionTargetTags() {
-  const targetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+  const targetTags = [];
   if (targetTagInput) {
     console.debug(`Processsing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
@@ -8365,7 +8366,9 @@ function provisionTargetTags() {
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core2.setOutput("major-minor-tag", majorMinorTag);
   }
-  return targetTags;
+  const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+  console.debug(`Processing additional tags [${additionalTargetTags.join(", ")}]`);
+  return targetTags.concat(additionalTargetTags);
 }
 async function run() {
   validateInputs();
@@ -8375,10 +8378,11 @@ async function run() {
   const sha = shaInput ?? await getShaFromTag(octokit, sourceTagInput) ?? github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
   core2.setOutput("sha", sha);
   const targetTags = provisionTargetTags();
-  if (targetTags.some((tag) => !tag.isStable)) {
-    core2.setFailed(
-      `Unstable versioned-target tags [${targetTags.filter((tag) => tag.cannotReplace).join(", ")}]`
-    );
+  const tagsAsVersionsNotStable = targetTags.filter(
+    (tag) => tag instanceof TargetVersionedTag && !tag.isStableVersion
+  );
+  if (tagsAsVersionsNotStable.length) {
+    core2.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(", ")}]`);
     return;
   }
   for (const tag of targetTags) {
@@ -8387,19 +8391,17 @@ async function run() {
     if (await tagExists(octokit, tag))
       tag.found();
   }
-  const errors = [];
-  if (targetTags.some((tag) => !tag.canUpsert)) {
-    errors.push(
-      `Unable to update existing tags [${targetTags.filter((tag) => !tag.canUpsert).join(", ")}]`
-    );
+  const failureMessages = [];
+  const tagsAreNotOverwrittable = targetTags.filter((tag) => !tag.canUpsert);
+  if (tagsAreNotOverwrittable.length) {
+    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwrittable.join(", ")}]`);
   }
-  if (targetTags.some((tag) => !tag.isPublished)) {
-    errors.push(
-      `Unable to update pre-released tags [${targetTags.filter((tag) => !tag.isPublished).join(", ")}]`
-    );
+  const tagsAreNotPublished = targetTags.filter((tag) => !tag.isPublished);
+  if (tagsAreNotPublished.length) {
+    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(", ")}]`);
   }
-  if (errors.length) {
-    errors.forEach((error) => core2.setFailed(error));
+  if (failureMessages.length) {
+    failureMessages.forEach((error) => core2.setFailed(error));
     return;
   }
   targetTags.forEach((tag) => createTag(tag));

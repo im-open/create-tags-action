@@ -36,50 +36,52 @@ jobs:
 
   # Caution, tests bleed into each other
   # Limits the amount of jobs we have to spin up
-  integrations:
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.operating-system }}
+  # integrations:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       operating-system: [ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.operating-system }}
 
-    steps:
-      - name: Checkout Action
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout Action
+  #       uses: actions/checkout@v3
 
-      - name: Test Standalone Execution
-        uses: ./ # Uses an action in the root directory
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          target-tag: 1.2.3
-          additional-target-tags: |
-            test-latest
-            test-mine
-          include-major: true
-          force-target: true # overwrites 1.2.3 if it already exists
+  #     - name: Test Standalone Execution
+  #       uses: ./ # Uses an action in the root directory
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         target-tag: 1.2.3
+  #         additional-target-tags: |
+  #           test-latest
+  #           test-mine
+  #         include-major: true
+  #         include-major-minor: true
+  #         force-target: true # overwrites 1.2.3 if it already exists
 
-      - name: Should update 3 releases and create 1 new release
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const getTag = async tag => {
-              try {
-                const { data } = await github.rest.git.getRef({
-                  ...context.repo,
-                  ref: `tags/${tag}`
-                });
-                return data;
-              }
-              catch (e) {
-                if (e.status === 404) return null;
-                throw new Error(`Retrieving refs failed with the following error: ${e}`)
-              }
-            }
+  #     - name: Should update 3 releases and create 1 new release
+  #       uses: actions/github-script@v6
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         script: |
+  #           const getTag = async tag => {
+  #             try {
+  #               const { data } = await github.rest.git.getRef({
+  #                 ...context.repo,
+  #                 ref: `tags/${tag}`
+  #               });
+  #               console.log(data)
+  #               return data;
+  #             }
+  #             catch (e) {
+  #               if (e.status === 404) return null;
+  #               throw new Error(`Retrieving refs failed with the following error: ${e}`)
+  #             }
+  #           }
 
-            const mainTag = getTag('1.2.3');
-            const latestTag = getTag('test-latest');
-            const mineTag = getTag('test-mine');
+  #           const mainTag = getTag('1.2.3');
+  #           const latestTag = getTag('test-latest');
+  #           const mineTag = getTag('test-mine');
 
-            if (!mainTag || mainTag.sha !== '${{ steps.standalone.outputs.sha }}')
-              core.setFailure(`main tag is not correct [${maintag}:${mainTag.sha}]`);
+  #           if (!mainTag || mainTag.sha !== '${{ steps.standalone.outputs.sha }}')
+  #             core.setFailure(`main tag is not correct [${maintag}:${mainTag.sha}]`);

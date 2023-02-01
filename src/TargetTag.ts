@@ -55,16 +55,17 @@ export default class TargetTag {
 }
 
 export class TargetVersionedTag extends TargetTag {
-  readonly #semVer: SemVer;
+  readonly #semver: SemVer;
 
   constructor(value: string, options?: TargetTagOptions | undefined) {
     super(value, options);
 
-    this.#semVer = semverParse(value);
-    if (!isSemver(this.#semVer)) throw new TypeError(`value [${value}] must be a semver`);
+    const semver = semverParse(value);
+    if (!isSemver(semver)) throw new TypeError(`value [${value}] must be a semver`);
+    this.#semver = semver as SemVer;
   }
 
-  get isStable() {
-    return isStableSemverVersion(this.#semVer);
+  get isStableVersion() {
+    return isStableSemverVersion(this.#semver);
   }
 }

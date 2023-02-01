@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Increment the version
-        uses: im-open/git-version-lite@v2.0.7
+        uses: im-open/git-version-lite@v2
         id: version
         with:
           create-ref: true

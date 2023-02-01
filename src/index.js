@@ -9,7 +9,7 @@ import {
   validateIfTaggedReleaseIsPublished,
   createTag
 } from './api-utils';
-import TargetTag from './TargetTag';
+import TargetTag, { TargetVersionedTag } from './TargetTag';
 
 const token = core.getInput('github-token', { required: true });
 core.setSecret(token);
@@ -39,9 +39,7 @@ function validateInputs() {
 }
 
 function provisionTargetTags() {
-  const targetTags = additionalTargetTagInputs
-    .filter(tag => tag)
-    .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+  const targetTags = [];
 
   if (targetTagInput) {
     console.debug(`Processsing target-tag [${targetTagInput}]`);
@@ -66,7 +64,13 @@ function provisionTargetTags() {
     core.setOutput('major-minor-tag', majorMinorTag);
   }
 
-  return targetTags;
+  const additionalTargetTags = additionalTargetTagInputs
+    .filter(tag => tag)
+    .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+
+  console.debug(`Processing additional tags [${additionalTargetTags.join(', ')}]`);
+
+  return targetTags.concat(additionalTargetTags);
 }
 
 async function run() {
@@ -86,10 +90,12 @@ async function run() {
 
   const targetTags = provisionTargetTags();
 
-  if (targetTags.some(tag => !tag.isStable)) {
-    core.setFailed(
-      `Unstable versioned-target tags [${targetTags.filter(tag => tag.cannotReplace).join(', ')}]`
-    );
+  const tagsAsVersionsNotStable = targetTags.filter(
+    tag => tag instanceof TargetVersionedTag && !tag.isStableVersion
+  );
+
+  if (tagsAsVersionsNotStable.length) {
+    core.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(', ')}]`);
     return;
   }
 
@@ -98,23 +104,21 @@ async function run() {
     if (await tagExists(octokit, tag)) tag.found();
   }
 
-  const errors = [];
-  if (targetTags.some(tag => !tag.canUpsert)) {
-    errors.push(
-      `Unable to update existing tags [${targetTags.filter(tag => !tag.canUpsert).join(', ')}]`
-    );
+  // Tally up all failures instead of existing on first failure
+  const failureMessages = [];
+
+  const tagsAreNotOverwrittable = targetTags.filter(tag => !tag.canUpsert);
+  if (tagsAreNotOverwrittable.length) {
+    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwrittable.join(', ')}]`);
   }
 
-  if (targetTags.some(tag => !tag.isPublished)) {
-    errors.push(
-      `Unable to update pre-released tags [${targetTags
-        .filter(tag => !tag.isPublished)
-        .join(', ')}]`
-    );
+  const tagsAreNotPublished = targetTags.filter(tag => !tag.isPublished);
+  if (tagsAreNotPublished.length) {
+    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(', ')}]`);
   }
 
-  if (errors.length) {
-    errors.forEach(error => core.setFailed(error));
+  if (failureMessages.length) {
+    failureMessages.forEach(error => core.setFailed(error));
     return;
   }
 
