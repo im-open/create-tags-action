@@ -1,6 +1,7 @@
 // https://www.npmjs.com/package/@actions/core
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
 import {
   tagExists,
   getShaFromTag,
@@ -8,7 +9,6 @@ import {
   validateIfTaggedReleaseIsPublished,
   createTag
 } from './api-utils';
-import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
 import TargetTag from './TargetTag';
 
 const token = core.getInput('github-token', { required: true });

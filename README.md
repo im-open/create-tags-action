@@ -1,4 +1,4 @@
-[![CI - Increment Version on Merge](https://github.com/im-enrollment/upsert-tagged-relases-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/upsert-tagged-relases-action/actions/workflows/increment-version-on-merge.yml)
+[![CI - Increment Version on Merge](https://github.com/im-enrollment/upsert-tagged-releases-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/upsert-tagged-releases-action/actions/workflows/increment-version-on-merge.yml)
 
 # Upsert Release Tags Action
 
@@ -34,11 +34,11 @@ Easily generates additonal major `v1` and `latest` tags.
 | `force-additional-targets` | false       | `true`  | Overwrite the target tags in the 'additional-taget-tags' input if it already exists                                                                                         |
 | `fail-on-invalid-version`  | false       | `true`  | Forces semver validation check on the 'source-tag' and 'target-tag'                                                                                                         |
 
-> Additional inputs can be found on the [action definition](https://github.com/im-enrollment/upsert-tagged-relases-action/blob/main/action.yml)
+> Additional inputs can be found on the [action definition](https://github.com/im-enrollment/upsert-tagged-releases-action/blob/main/action.yml)
 
 ## Usage Examples
 
-# Standalone
+### Standalone
 
 ```yml
 jobs:
@@ -64,7 +64,7 @@ jobs:
   # mine
 ```
 
-# With git-version-lite
+### With git-version-lite
 
 ```yml
 jobs:

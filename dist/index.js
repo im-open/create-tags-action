@@ -8158,6 +8158,39 @@ var require_parse = __commonJS({
 var core2 = __toESM(require_core());
 var github = __toESM(require_github());
 
+// src/version-utils.ts
+var import_parse3 = __toESM(require_parse());
+var import_semver = __toESM(require_semver());
+function isSemver(value) {
+  if (!value)
+    return false;
+  if (value instanceof import_semver.default)
+    return true;
+  return (0, import_parse3.default)(value) ? true : false;
+}
+function getMajorTag(tag) {
+  if (!isSemver)
+    throw new TypeError(`Tag [${tag}] is not a semver`);
+  return tag.split(".")[0];
+}
+function getMajorAndMinorTag(tag) {
+  if (!isSemver)
+    throw new TypeError(`Tag [${tag}] is not a semver`);
+  return tag.split(".").slice(0, 2).join(".");
+}
+function isStableSemverVersion(version2) {
+  return version2.prerelease.length === 0;
+}
+function validateSemverVersionFromTag(tag) {
+  const semverVersion = (0, import_parse3.default)(tag);
+  if (!semverVersion) {
+    throw new Error(`Tag [${tag}] doesn't satisfy semantic versioning specification`);
+  }
+  if (!isStableSemverVersion(semverVersion)) {
+    throw new Error(`It is not allowed to specify pre-release version tag [${tag}]`);
+  }
+}
+
 // src/api-utils.ts
 var core = __toESM(require_core());
 var import_github = __toESM(require_github());
@@ -8234,39 +8267,6 @@ async function createTag(octokit, tag, sha) {
     ref: `refs/tags/${tag}`
   });
   core.info("Finished creating the tag.");
-}
-
-// src/version-utils.ts
-var import_parse3 = __toESM(require_parse());
-var import_semver = __toESM(require_semver());
-function isSemver(value) {
-  if (!value)
-    return false;
-  if (value instanceof import_semver.default)
-    return true;
-  return (0, import_parse3.default)(value) ? true : false;
-}
-function getMajorTag(tag) {
-  if (!isSemver)
-    throw new TypeError(`Tag [${tag}] is not a semver`);
-  return tag.split(".")[0];
-}
-function getMajorAndMinorTag(tag) {
-  if (!isSemver)
-    throw new TypeError(`Tag [${tag}] is not a semver`);
-  return tag.split(".").slice(0, 2).join(".");
-}
-function isStableSemverVersion(version2) {
-  return version2.prerelease.length === 0;
-}
-function validateSemverVersionFromTag(tag) {
-  const semverVersion = (0, import_parse3.default)(tag);
-  if (!semverVersion) {
-    throw new Error(`Tag [${tag}] doesn't satisfy semantic versioning specification`);
-  }
-  if (!isStableSemverVersion(semverVersion)) {
-    throw new Error(`It is not allowed to specify pre-release version tag [${tag}]`);
-  }
 }
 
 // src/TargetTag.ts
