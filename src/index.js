@@ -5,7 +5,7 @@ import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from '
 import {
   tagExists,
   getShaFromTag,
-  isTaggedReleasePublished,
+  isTagAPublishedReleaseOrNonexistant,
   validateIfTaggedReleaseIsPublished,
   createTag
 } from './api-utils';
@@ -70,7 +70,7 @@ function provisionTargetTags() {
 
   console.debug(`Processing additional-target-tags [${additionalTargetTags.join(', ')}]`);
 
-  return targetTags.concat(additionalTargetTags);
+  return targetTags.concat(additionalTargetTags).sort();
 }
 
 async function run() {
@@ -101,16 +101,18 @@ async function run() {
 
   console.debug('Validating references...');
   for (const tag of targetTags) {
-    if (await isTaggedReleasePublished(octokit, tag)) tag.markPublished();
-    if (await tagExists(octokit, tag)) tag.found();
+    if (!(await tagExists(octokit, tag))) continue;
+
+    tag.found();
+    if (await isTagAPublishedReleaseOrNonexistant(octokit, tag)) tag.markPublished();
   }
 
   // Tally up all failures instead of existing on first failure
   const failureMessages = [];
 
-  const tagsAreNotOverwrittable = targetTags.filter(tag => !tag.canUpsert);
-  if (tagsAreNotOverwrittable.length) {
-    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwrittable.join(', ')}]`);
+  const tagsAreNotOverwritable = targetTags.filter(tag => !tag.upsertable);
+  if (tagsAreNotOverwritable.length) {
+    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(', ')}]`);
   }
 
   const tagsAreNotPublished = targetTags.filter(tag => !tag.isPublished);
@@ -125,7 +127,7 @@ async function run() {
 
   console.debug('Upserting references...');
   targetTags.forEach(tag => createTag(tag));
-  core.info(`Tags [${targetTags.join(', ')}] now point to ${sourceTagInput || sha}`);
+  core.info(`Tags [${targetTags.join(', ')}] point to ${sourceTagInput || sha}.`);
 }
 
 run().catch(error => {

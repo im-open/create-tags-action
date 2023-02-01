@@ -8,7 +8,7 @@ interface TargetTagOptions {
 
 export default class TargetTag {
   readonly value: string;
-  readonly isOverwritable: boolean;
+  readonly isOverwritableIfExists: boolean;
   protected isVersion: boolean;
   #exists: boolean;
   #published: boolean;
@@ -18,7 +18,7 @@ export default class TargetTag {
 
     this.value = value;
     this.isVersion = false;
-    this.isOverwritable = canOverwrite;
+    this.isOverwritableIfExists = canOverwrite;
     this.#exists = false;
     this.#published = false;
   }
@@ -31,8 +31,8 @@ export default class TargetTag {
     this.#exists = true;
   }
 
-  get canUpsert() {
-    return this.isOverwritable || !this.exists;
+  get upsertable() {
+    return this.isOverwritableIfExists || !this.exists;
   }
 
   get isPublished() {

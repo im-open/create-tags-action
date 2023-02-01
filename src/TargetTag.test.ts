@@ -24,24 +24,24 @@ it('Should not be published', () => {
 
 it('Can upsert when overwritable but and not found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: true });
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Can upsert when overwritable but found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: true });
   tag.found();
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Can upsert when not overwritable and not found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: false });
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Cannot upsert when not overwritable but found', () => {
   const tag = TargetTag.for('v1.2.3');
   tag.found();
-  expect(tag.canUpsert).toBeFalsy();
+  expect(tag.upsertable).toBeFalsy();
 });
 
 it('Should convert to tag name on toString', () => {

@@ -30,8 +30,12 @@ export async function getShaFromTag(octokit: InstanceType<typeof GitHub>, tag: s
   return foundTag.object.sha;
 }
 
-export async function isTaggedReleasePublished(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function isTagAPublishedReleaseOrNonexistant(
+  octokit: InstanceType<typeof GitHub>,
+  tag: string
+) {
   try {
+    console.debug(`Validating tag [${tag}] is a published release...`);
     const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
       ...context.repo,
       tag
@@ -39,6 +43,7 @@ export async function isTaggedReleasePublished(octokit: InstanceType<typeof GitH
 
     return !foundRelease.prerelease;
   } catch (e) {
+    if ((e as RequestError).status === 404) return true;
     throw new Error(`Retrieving releases failed with the following error: ${e}`);
   }
 }
@@ -60,16 +65,17 @@ export async function validateIfTaggedReleaseIsPublished(
     );
   } catch (e) {
     if ((e as RequestError).status === 404) {
-      throw new Error(`No GitHub release found for the [${tag}] tag`);
+      throw new Error(`No tagged release found for the [${tag}]`);
     }
     throw new Error(`Retrieving releases failed with the following error: ${e}`);
   }
 }
 
 export async function createTag(octokit: InstanceType<typeof GitHub>, tag: TargetTag, sha: string) {
-  core.info(`Generating the ref [${tag}] on GitHub...`);
+  console.debug(`Generating tag [${tag}]...`);
 
-  if (!tag.isOverwritable && tag.exists) throw new Error(`Reference tag [${tag}] already exists`);
+  if (!tag.isOverwritableIfExists && tag.exists)
+    throw new Error(`Reference tag [${tag}] already exists`);
 
   const payload = {
     ...context.repo,
@@ -82,8 +88,7 @@ export async function createTag(octokit: InstanceType<typeof GitHub>, tag: Targe
       ref: `tags/${tag}`,
       force: true
     });
-
-    core.info('Finished updating the tag.');
+    console.debug(`Updated existing tag [${tag}]`);
     return;
   }
 
@@ -92,5 +97,5 @@ export async function createTag(octokit: InstanceType<typeof GitHub>, tag: Targe
     ref: `refs/tags/${tag}`
   });
 
-  core.info('Finished creating the tag.');
+  console.debug(`Created new tag [${tag}]`);
 }
