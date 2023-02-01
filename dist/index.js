@@ -8373,6 +8373,7 @@ async function run() {
   if (sourceTagInput)
     await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
   const sha = shaInput ?? await getShaFromTag(octokit, sourceTagInput) ?? github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
+  core2.setOutput("sha", sha);
   const targetTags = provisionTargetTags();
   if (targetTags.some((tag) => !tag.isStable)) {
     core2.setFailed(

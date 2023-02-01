@@ -79,6 +79,8 @@ async function run() {
       ? github.context.payload.pull_request.head.sha
       : github.context.sha;
 
+  core.setOutput('sha', sha);
+
   const targetTags = provisionTargetTags();
 
   if (targetTags.some(tag => !tag.isStable)) {

@@ -50,8 +50,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target-tag: v1.2.3
-          target-tags: | # by default ovewrites these tags if already exist
-            latest,
+          additional-target-tags: | # by default ovewrites these tags if already exist
+            latest
             mine
           include-major-tag: true
           force-target: true # overwrites v1.2.3 if it already exists
@@ -87,7 +87,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
           target-tag: ${{ steps.version.outputs.NEXT_VERSION }}
-          target-tags: latest
+          additional-target-tags: latest
           include-major-tag: true
 
   # Creates tagged releases based off of the sha from git-version-lite:

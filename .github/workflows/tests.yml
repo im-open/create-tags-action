@@ -1,0 +1,85 @@
+name: 🧪 Tests
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'dist/**'
+      - '/src/**.test.ts'
+      - 'action.yml'
+      - 'package-lock.json'
+      - 'package.json'
+
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  # https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  units:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: npm
+
+      - name: npm ci 🚀
+        run: npm ci --prefer-offline --no-audit --ignore-scripts
+
+      - run: npm test
+
+  # Caution, tests bleed into each other
+  # Limits the amount of jobs we have to spin up
+  integrations:
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.operating-system }}
+
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v3
+
+      - name: Test Standalone Execution
+        uses: ./ # Uses an action in the root directory
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: test1.2.3
+          additional-target-tags: |
+            test-latest
+            test-mine
+          include-major-tag: true
+          force-target: true # overwrites v1.2.3 if it already exists
+
+      - name: Should update 3 releases and create 1 new release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const getTag = async tag => {
+              try {
+                const { data } = await github.rest.git.getRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+                return data;
+              }
+              catch (e) {
+                if (e.status === 404) return null;
+                throw new Error(`Retrieving refs failed with the following error: ${e}`)
+              }
+            }
+
+            const mainTag = getTag('test1.2.3');
+            const latestTag = getTag('test-latest');
+            const mineTag = getTag('test-mine');
+
+            if (!mainTag || mainTag.sha !== '${{ steps.standalone.outputs.sha }}')
+              core.setFailure(`main tag is not correct [${maintag}:${mainTag.sha}]`);
