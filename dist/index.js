@@ -8203,7 +8203,7 @@ async function getTag(octokit, tag) {
   } catch (e) {
     if (e.status === 404)
       return null;
-    throw new Error(`Retrieving refs failed with the following error: ${e}`);
+    throw new Error(`Retrieving ref by tag [${tag}] failed with the following error: ${e}`);
   }
 }
 async function tagExists(octokit, tag) {
@@ -8215,76 +8215,66 @@ async function getShaFromTag(octokit, tag) {
     throw new Error(`The tag [${tag}] does not exist. Unable to get sha.`);
   return foundTag.object.sha;
 }
-async function isTagAPublishedReleaseOrNonexistant(octokit, tag) {
+async function tagHasRelease(octokit, tag) {
+  const release = await getRelease(octokit, tag);
+  console.debug(release);
+  return release !== null;
+}
+async function getRelease(octokit, tag) {
   try {
-    console.debug(`Validating tag [${tag}] is a published release...`);
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
+    const { data: release } = await octokit.rest.repos.getReleaseByTag({
       ...import_github.context.repo,
       tag
     });
-    return !foundRelease.prerelease;
+    return release;
   } catch (e) {
     if (e.status === 404)
-      return true;
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
-  }
-}
-async function validateIfTaggedReleaseIsPublished(octokit, tag) {
-  try {
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
-      ...import_github.context.repo,
-      tag
-    });
-    if (!foundRelease.prerelease)
-      return;
-    throw new Error(
-      `Release ['${foundRelease.name}'] is marked as pre-release. Updating tags for pre-release is not supported.`
-    );
-  } catch (e) {
-    if (e.status === 404) {
-      throw new Error(`No tagged release found for the [${tag}]`);
-    }
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
+      return null;
+    throw new Error(`Retrieving release by tag [${tag}] failed with the following error: ${e}`);
   }
 }
 async function createTag(octokit, tag, sha) {
   console.debug(`Generating tag [${tag}]...`);
-  if (!tag.isOverwritableIfExists && tag.exists)
+  if (!tag.upsertable)
     throw new Error(`Reference tag [${tag}] already exists`);
-  const payload = {
-    ...import_github.context.repo,
-    sha
-  };
-  if (tag.exists) {
-    await octokit.rest.git.updateRef({
+  try {
+    const payload = {
+      ...import_github.context.repo,
+      sha
+    };
+    if (tag.exists) {
+      await octokit.rest.git.updateRef({
+        ...payload,
+        ref: `tags/${tag}`,
+        force: true
+      });
+      console.debug(`Updated existing tag [${tag}]`);
+      return;
+    }
+    await octokit.rest.git.createRef({
       ...payload,
-      ref: `tags/${tag}`,
-      force: true
+      ref: `refs/tags/${tag}`
     });
-    console.debug(`Updated existing tag [${tag}]`);
-    return;
+    console.debug(`Created new tag [${tag}]`);
+  } catch (e) {
+    throw new Error(`Unable to create or upsert tag [${tag}] with the following error: ${e}`);
   }
-  await octokit.rest.git.createRef({
-    ...payload,
-    ref: `refs/tags/${tag}`
-  });
-  console.debug(`Created new tag [${tag}]`);
 }
 
 // src/TargetTag.ts
 var import_parse4 = __toESM(require_parse());
-var _exists, _published;
+var _exists, _hasRelease;
 var _TargetTag = class {
   constructor(value, { canOverwrite = false } = { canOverwrite: false }) {
     __privateAdd(this, _exists, void 0);
-    __privateAdd(this, _published, void 0);
+    __privateAdd(this, _hasRelease, void 0);
     if (!value?.trim())
       throw new TypeError("value cannot be empty");
     this.value = value;
     this.isVersion = false;
     this.isOverwritableIfExists = canOverwrite;
     __privateSet(this, _exists, false);
-    __privateSet(this, _published, false);
+    __privateSet(this, _hasRelease, false);
   }
   get exists() {
     return __privateGet(this, _exists);
@@ -8295,11 +8285,11 @@ var _TargetTag = class {
   get upsertable() {
     return this.isOverwritableIfExists || !this.exists;
   }
-  get isPublished() {
-    return __privateGet(this, _published);
+  get hasRelease() {
+    return __privateGet(this, _hasRelease);
   }
-  markPublished() {
-    __privateSet(this, _published, true);
+  foundRelease() {
+    __privateSet(this, _hasRelease, true);
   }
   toString() {
     return this.value;
@@ -8310,7 +8300,7 @@ var _TargetTag = class {
 };
 var TargetTag = _TargetTag;
 _exists = new WeakMap();
-_published = new WeakMap();
+_hasRelease = new WeakMap();
 var _semver;
 var TargetVersionedTag = class extends TargetTag {
   constructor(value, options) {
@@ -8336,14 +8326,13 @@ var targetTagInput = core.getInput("target-tag");
 var additionalTargetTagInputs = core.getMultilineInput("additional-target-tags");
 var includeMajorTag = core.getBooleanInput("include-major");
 var includeMajorMinorTag = core.getBooleanInput("include-major-minor");
+var includeLatestTag = core.getBooleanInput("include-latest");
 var forceMainTargetTagCreation = core.getBooleanInput("force-target");
 var forceAdditioanlTargetTagsCreation = core.getBooleanInput("force-additional-targets");
 var failOnInvalidVersion = core.getBooleanInput("fail-on-invalid-version");
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError("A source-tag, target-tag or additional-target-tags must be provided");
-  if (shaInput && sourceTagInput)
-    throw new TypeError("A sha and source-tag cannot be included together");
   if (failOnInvalidVersion && sourceTagInput)
     validateSemverVersionFromTag(sourceTagInput);
   if (failOnInvalidVersion && targetTagInput)
@@ -8368,6 +8357,10 @@ function provisionTargetTags() {
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput("major-minor-tag", majorMinorTag);
   }
+  if (includeLatestTag && referenceTag) {
+    console.debug("Inlucding latest tag");
+    targetTags.push(TargetTag.for("latest", { canOverwrite: true }));
+  }
   const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
   console.debug(`Processing additional-target-tags [${additionalTargetTags.join(", ")}]`);
   return targetTags.concat(additionalTargetTags).sort();
@@ -8375,8 +8368,13 @@ function provisionTargetTags() {
 async function run() {
   validateInputs();
   const octokit = github.getOctokit(token);
-  if (sourceTagInput)
-    await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
+  if (sourceTagInput) {
+    const release = await getRelease(octokit, sourceTagInput);
+    if (release?.prerelease)
+      throw new Error(
+        `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+      );
+  }
   const sha = shaInput ?? await getShaFromTag(octokit, sourceTagInput) ?? github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
   core.setOutput("sha", sha);
   const targetTags = provisionTargetTags();
@@ -8384,7 +8382,7 @@ async function run() {
     (tag) => tag instanceof TargetVersionedTag && !tag.isStableVersion
   );
   if (tagsAsVersionsNotStable.length) {
-    core.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(", ")}]`);
+    core.setFailed(`Unstable versioned tags [${tagsAsVersionsNotStable.join(", ")}]`);
     return;
   }
   console.debug("Validating references...");
@@ -8392,25 +8390,30 @@ async function run() {
     if (!await tagExists(octokit, tag))
       continue;
     tag.found();
-    if (await isTagAPublishedReleaseOrNonexistant(octokit, tag))
-      tag.markPublished();
+    if (await tagHasRelease(octokit, tag))
+      tag.foundRelease();
   }
   const failureMessages = [];
   const tagsAreNotOverwritable = targetTags.filter((tag) => !tag.upsertable);
   if (tagsAreNotOverwritable.length) {
     failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(", ")}]`);
   }
-  const tagsAreNotPublished = targetTags.filter((tag) => !tag.isPublished);
-  if (tagsAreNotPublished.length) {
-    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(", ")}]`);
+  const tagsWithRelease = targetTags.filter((tag) => tag.hasRelease);
+  if (tagsWithRelease.length) {
+    failureMessages.push(
+      `Unable to update tags with an associated release [${tagsWithRelease.join(
+        ", "
+      )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+    );
   }
   if (failureMessages.length) {
     failureMessages.forEach((error) => core.setFailed(error));
     return;
   }
   console.debug("Upserting references...");
-  targetTags.forEach((tag) => createTag(tag));
+  targetTags.forEach(async (tag) => await createTag(tag));
   core.info(`Tags [${targetTags.join(", ")}] point to ${sourceTagInput || sha}.`);
+  core.setOutput("tags", targetTags.join(","));
 }
 run().catch((error) => {
   core.setFailed(error.message);

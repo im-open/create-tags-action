@@ -11,7 +11,7 @@ export default class TargetTag {
   readonly isOverwritableIfExists: boolean;
   protected isVersion: boolean;
   #exists: boolean;
-  #published: boolean;
+  #hasRelease: boolean;
 
   constructor(value: string, { canOverwrite = false }: TargetTagOptions = { canOverwrite: false }) {
     if (!value?.trim()) throw new TypeError('value cannot be empty');
@@ -20,7 +20,7 @@ export default class TargetTag {
     this.isVersion = false;
     this.isOverwritableIfExists = canOverwrite;
     this.#exists = false;
-    this.#published = false;
+    this.#hasRelease = false;
   }
 
   get exists() {
@@ -35,12 +35,12 @@ export default class TargetTag {
     return this.isOverwritableIfExists || !this.exists;
   }
 
-  get isPublished() {
-    return this.#published;
+  get hasRelease() {
+    return this.#hasRelease;
   }
 
-  markPublished() {
-    this.#published = true;
+  foundRelease() {
+    this.#hasRelease = true;
   }
 
   toString() {

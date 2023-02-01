@@ -2,13 +2,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
-import {
-  tagExists,
-  getShaFromTag,
-  isTagAPublishedReleaseOrNonexistant,
-  validateIfTaggedReleaseIsPublished,
-  createTag
-} from './api-utils';
+import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
 import TargetTag, { TargetVersionedTag } from './TargetTag';
 
 const token = core.getInput('github-token', { required: true });
@@ -21,6 +15,7 @@ const additionalTargetTagInputs = core.getMultilineInput('additional-target-tags
 
 const includeMajorTag = core.getBooleanInput('include-major');
 const includeMajorMinorTag = core.getBooleanInput('include-major-minor');
+const includeLatestTag = core.getBooleanInput('include-latest');
 
 const forceMainTargetTagCreation = core.getBooleanInput('force-target');
 const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional-targets');
@@ -30,9 +25,6 @@ const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
-
-  if (shaInput && sourceTagInput)
-    throw new TypeError('A sha and source-tag cannot be included together');
 
   if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
   if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
@@ -64,6 +56,11 @@ function provisionTargetTags() {
     core.setOutput('major-minor-tag', majorMinorTag);
   }
 
+  if (includeLatestTag && referenceTag) {
+    console.debug('Inlucding latest tag');
+    targetTags.push(TargetTag.for('latest', { canOverwrite: true }));
+  }
+
   const additionalTargetTags = additionalTargetTagInputs
     .filter(tag => tag)
     .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
@@ -77,7 +74,13 @@ async function run() {
   validateInputs();
 
   const octokit = github.getOctokit(token);
-  if (sourceTagInput) await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
+  if (sourceTagInput) {
+    const release = await getRelease(octokit, sourceTagInput);
+    if (release?.prerelease)
+      throw new Error(
+        `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+      );
+  }
 
   const sha =
     shaInput ??
@@ -95,7 +98,7 @@ async function run() {
   );
 
   if (tagsAsVersionsNotStable.length) {
-    core.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(', ')}]`);
+    core.setFailed(`Unstable versioned tags [${tagsAsVersionsNotStable.join(', ')}]`);
     return;
   }
 
@@ -104,7 +107,7 @@ async function run() {
     if (!(await tagExists(octokit, tag))) continue;
 
     tag.found();
-    if (await isTagAPublishedReleaseOrNonexistant(octokit, tag)) tag.markPublished();
+    if (await tagHasRelease(octokit, tag)) tag.foundRelease();
   }
 
   // Tally up all failures instead of existing on first failure
@@ -115,9 +118,13 @@ async function run() {
     failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(', ')}]`);
   }
 
-  const tagsAreNotPublished = targetTags.filter(tag => !tag.isPublished);
-  if (tagsAreNotPublished.length) {
-    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(', ')}]`);
+  const tagsWithRelease = targetTags.filter(tag => tag.hasRelease);
+  if (tagsWithRelease.length) {
+    failureMessages.push(
+      `Unable to update tags with an associated release [${tagsWithRelease.join(
+        ', '
+      )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+    );
   }
 
   if (failureMessages.length) {
@@ -126,8 +133,11 @@ async function run() {
   }
 
   console.debug('Upserting references...');
-  targetTags.forEach(tag => createTag(tag));
+  targetTags.forEach(async tag => await createTag(tag));
+
   core.info(`Tags [${targetTags.join(', ')}] point to ${sourceTagInput || sha}.`);
+
+  core.setOutput('tags', targetTags.join(','));
 }
 
 run().catch(error => {

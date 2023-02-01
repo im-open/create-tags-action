@@ -59,7 +59,7 @@ jobs:
           include-major-minor: true
           force-target: true # overwrites 1.2.3 if it already exists
 
-      - name: Should update 3 releases and create 1 new release
+      - name: Should update 3 tags and create 1 new tag
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

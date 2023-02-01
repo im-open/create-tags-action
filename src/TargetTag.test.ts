@@ -11,15 +11,15 @@ it('Should not exist when found', () => {
   expect(tag.exists).toBeFalsy();
 });
 
-it('Should be published', () => {
+it('Should have a release', () => {
   const tag = TargetTag.for('v1.2.3');
-  tag.markPublished();
-  expect(tag.isPublished).toBeTruthy();
+  tag.foundRelease();
+  expect(tag.hasRelease).toBeTruthy();
 });
 
-it('Should not be published', () => {
+it('Should not have a release', () => {
   const tag = TargetTag.for('v1.2.3');
-  expect(tag.isPublished).toBeFalsy();
+  expect(tag.hasRelease).toBeFalsy();
 });
 
 it('Can upsert when overwritable but and not found', () => {
