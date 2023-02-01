@@ -28,13 +28,11 @@ const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional
 const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
 
 function validateInputs() {
+  if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
+    throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
+
   if (shaInput && sourceTagInput)
     throw new TypeError('A sha and source-tag cannot be included together');
-
-  if (shaInput && (includeMajorTag || includeMajorMinorTag))
-    throw new TypeError(
-      'A major or major-minor tag cannot be automatically generated from a sha, you must provide a source-tag instead.'
-    );
 
   if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
   if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
@@ -50,16 +48,18 @@ function provisionTargetTags() {
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
 
-  if (includeMajorTag) {
-    const majorTag = getMajorTag(sourceTagInput);
+  const referenceTag = targetTagInput || sourceTagInput;
+
+  if (includeMajorTag && referenceTag) {
+    const majorTag = getMajorTag(referenceTag);
     console.debug(`Processsing major-tag [${majorTag}]`);
 
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core.setOutput('major-tag', majorTag);
   }
 
-  if (includeMajorMinorTag) {
-    const majorMinorTag = getMajorAndMinorTag(sourceTagInput);
+  if (includeMajorMinorTag && referenceTag) {
+    const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
     console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
@@ -88,7 +88,7 @@ async function run() {
 
   if (targetTags.some(tag => !tag.isStable)) {
     core.setFailed(
-      `Unstable versioned-target tags [${targetTags.filer(tag => tag.cannotReplace).join(', ')}]`
+      `Unstable versioned-target tags [${targetTags.filter(tag => tag.cannotReplace).join(', ')}]`
     );
     return;
   }
