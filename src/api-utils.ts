@@ -4,6 +4,7 @@ import { RequestError } from '@octokit/types';
 import TargetTag from './TargetTag';
 
 async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
+  if (!tag) throw new TypeError('Tag is empty');
   try {
     // https://octokit.github.io/rest.js/v18#git-get-ref
     // https://docs.github.com/en/rest/reference/git#get-a-reference
@@ -35,6 +36,7 @@ export async function tagHasRelease(octokit: InstanceType<typeof GitHub>, tag: s
 }
 
 export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+  if (!tag) throw new TypeError('Tag is empty');
   try {
     const { data: release } = await octokit.rest.repos.getReleaseByTag({
       ...context.repo,
@@ -49,6 +51,7 @@ export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: stri
 }
 
 export async function createTag(octokit: InstanceType<typeof GitHub>, tag: TargetTag, sha: string) {
+  if (!tag) throw new TypeError('Tag is empty');
   if (!tag.upsertable) throw new Error(`Reference tag [${tag}] already exists`);
 
   try {

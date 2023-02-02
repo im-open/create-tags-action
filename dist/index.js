@@ -8232,6 +8232,8 @@ function validateSemverVersionFromTag(tag) {
 var import_github = __toESM(require_github());
 function getTag(octokit, tag) {
   return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
     try {
       const { data: foundTag } = yield octokit.rest.git.getRef(__spreadProps(__spreadValues({}, import_github.context.repo), {
         ref: `tags/${tag}`
@@ -8265,6 +8267,8 @@ function tagHasRelease(octokit, tag) {
 }
 function getRelease(octokit, tag) {
   return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
     try {
       const { data: release } = yield octokit.rest.repos.getReleaseByTag(__spreadProps(__spreadValues({}, import_github.context.repo), {
         tag
@@ -8279,6 +8283,8 @@ function getRelease(octokit, tag) {
 }
 function createTag(octokit, tag, sha) {
   return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
     if (!tag.upsertable)
       throw new Error(`Reference tag [${tag}] already exists`);
     try {
@@ -8400,9 +8406,22 @@ function provisionTargetTags() {
   const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
   return targetTags.concat(additionalTargetTags).sort();
 }
+function resolveSha(octokit) {
+  return __async(this, null, function* () {
+    if (shaInput)
+      return shaInput;
+    let sha;
+    if (sourceTagInput) {
+      sha = yield getShaFromTag(octokit, sourceTagInput);
+    }
+    if (!sha) {
+      sha = github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
+    }
+    return sha;
+  });
+}
 function run() {
   return __async(this, null, function* () {
-    var _a;
     validateInputs();
     const octokit = github.getOctokit(token);
     if (sourceTagInput) {
@@ -8412,7 +8431,7 @@ function run() {
           `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
         );
     }
-    const sha = ((_a = shaInput != null ? shaInput : yield getShaFromTag(octokit, sourceTagInput)) != null ? _a : github.context.eventName === "pull_request") ? github.context.payload.pull_request.head.sha : github.context.sha;
+    const sha = yield resolveSha(octokit);
     core.setOutput("sha", sha);
     const targetTags = provisionTargetTags();
     const tagsAsVersionsNotStable = targetTags.filter(
@@ -8450,10 +8469,15 @@ function run() {
     for (const tag of targetTags) {
       yield createTag(octokit, tag, sha);
     }
-    core.info(`Tags [${targetTags.join(", ")}] now point to ${sourceTagInput || sha}!`);
+    const tagsCreated = targetTags.filter((tag) => !tag.exists);
+    if (tagsCreated.length)
+      console.info(`Tags [${tagsCreated.join(", ")}] created.`);
     const tagsUpdated = targetTags.filter((tag) => tag.exists);
     if (tagsUpdated.length)
-      console.info(`Tags [${tagsUpdated.join(", ")}] updated`);
+      console.info(`Tags [${tagsUpdated.join(", ")}] updated.`);
+    core.info(
+      `Tag${targetTags.length > 1 ? "s" : ""} now point${targetTags.length ? "s" : ""} to ${sourceTagInput || sha}!`
+    );
     core.setOutput("tags", targetTags.join(","));
   });
 }

@@ -1,6 +1,7 @@
 // https://www.npmjs.com/package/@actions/core
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { GitHub } from '@actions/github/lib/utils';
 import { WebhookPlayloadExtended } from './types';
 import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
 import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
@@ -65,6 +66,24 @@ function provisionTargetTags() {
   return targetTags.concat(additionalTargetTags).sort();
 }
 
+async function resolveSha(octokit: InstanceType<typeof GitHub>) {
+  if (shaInput) return shaInput;
+
+  let sha;
+  if (sourceTagInput) {
+    sha = await getShaFromTag(octokit, sourceTagInput);
+  }
+
+  if (!sha) {
+    sha =
+      github.context.eventName === 'pull_request'
+        ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
+        : github.context.sha;
+  }
+
+  return sha;
+}
+
 async function run() {
   validateInputs();
 
@@ -77,13 +96,7 @@ async function run() {
       );
   }
 
-  const sha =
-    shaInput ??
-    (await getShaFromTag(octokit, sourceTagInput)) ??
-    github.context.eventName === 'pull_request'
-      ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
-      : github.context.sha;
-
+  const sha = await resolveSha(octokit);
   core.setOutput('sha', sha);
 
   const targetTags = provisionTargetTags();
@@ -131,11 +144,17 @@ async function run() {
     await createTag(octokit, tag, sha);
   }
 
-  core.info(`Tags [${targetTags.join(', ')}] now point to ${sourceTagInput || sha}!`);
+  const tagsCreated = targetTags.filter(tag => !tag.exists);
+  if (tagsCreated.length) console.info(`Tags [${tagsCreated.join(', ')}] created.`);
 
   const tagsUpdated = targetTags.filter(tag => tag.exists);
-  if (tagsUpdated.length) console.info(`Tags [${tagsUpdated.join(', ')}] updated`);
+  if (tagsUpdated.length) console.info(`Tags [${tagsUpdated.join(', ')}] updated.`);
 
+  core.info(
+    `Tag${targetTags.length > 1 ? 's' : ''} now point${targetTags.length ? 's' : ''} to ${
+      sourceTagInput || sha
+    }!`
+  );
   core.setOutput('tags', targetTags.join(','));
 }
 

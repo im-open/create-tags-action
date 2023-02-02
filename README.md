@@ -2,11 +2,14 @@
 
 # Create Multiple Tags Action
 
-Creates or updates tags. User to generate GitHub Action and Terraform Module tag where releases are not generated.
-The source tag cannot have an associated pre-releases.
-The target tags cannot have associated releases.
+Creates or update tags that are not associated with a published release.
 
-Easily generates additonal major `v1` and `latest` tags.
+- The source tag cannot have an associated pre-releases.
+- The target tags cannot have associated releases.
+- Easily generates additonal major `v1` and `latest` tags.
+- Cannot create tags associated with a pre-release.
+
+> Generally used in workflows that maintain GitHub Actions and Terraform Modules
 
 ## Index
 
@@ -72,11 +75,7 @@ jobs:
 
 
   # Creates tag based on the current context's sha:
-  # v1.2.3
-  # v1
-  # latest
-  # mine
-  # yours
+  # v1.2.3, v1, latest, mine, yours
 ```
 
 ### With git-version-lite
@@ -101,11 +100,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
+          source-target: ${{ steps.version.outputs.NEXT_VERSION }}
           include-major: true
           include-latest: false
 
   # Creates tag based off of the sha from git-version-lite:
-  # v1
+  # v1, latest
 ```
 
 > See workflow automated test for more examples

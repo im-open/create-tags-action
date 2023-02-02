@@ -38,51 +38,308 @@ jobs:
   # Limits the amount of jobs we have to spin up
   integrations:
     strategy:
+      max-parallel: 1
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest]
+        operating-system: [ubuntu-latest, [self-hosted, ubuntu-20.04]]
     runs-on: ${{ matrix.operating-system }}
 
     steps:
       - name: Checkout Action
         uses: actions/checkout@v3
 
-      - name: Standalone Execution
-        uses: ./ # Uses an action in the root directory
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          target-tag: 1.2.3
-          additional-target-tags: |
-            test-latest
-            test-mine
-          include-major: true
-          include-major-minor: true
-          include-latest: false
-          force-target: true # overwrites 1.2.3
+      # Standard Tests
+      # --------------
 
-      - name: Should update 3 tags and create 1 new tag
+      - name: Standard Tests - Pre Cleanup
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const getTag = async tag => {
+            const deleteTag = async tag => {
+              try {
+                await github.rest.git.deleteRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+              }
+              catch(e) { }
+            };
+
+            await deleteTag('1');
+            await deleteTag('1.2');
+            await deleteTag('1.2.3');
+            await deleteTag('test-latest');
+            await deleteTag('test-ephemeral');
+
+      - name: Should create new tags - Act
+        id: create-tags
+        uses: ./ # Uses an action in the root directory
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1.2.3
+          additional-target-tags: test-ephemeral
+          include-major: true
+          include-major-minor: true
+          include-latest: false
+          force-target: true
+
+      - name: Should create new tags - Assert
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const getTagSha = async tag => {
               try {
                 const { data } = await github.rest.git.getRef({
                   ...context.repo,
                   ref: `tags/${tag}`
                 });
-                console.debug(data)
-                return data;
+                return data.object.sha;
               }
               catch (e) {
                 if (e.status === 404) return null;
                 throw new Error(`Retrieving refs failed with the following error: ${e}`)
               }
-            }
+            };
 
-            const mainTag = getTag('1.2.3');
-            const latestTag = getTag('test-latest');
-            const mineTag = getTag('test-mine');
+            const mainTagSha = await getTagSha('1.2.3');
+            const majorTagSha = await getTagSha('1');
+            const minorTagSha = await getTagSha('1.2');
+            const ephemeralTagSha = await getTagSha('test-ephemeral');
 
-            if (!mainTag || mainTag.sha !== '${{ steps.standalone.outputs.sha }}')
-              core.setFailure(`main tag is not correct [${mainTag}:${mainTag.sha}]`);
+            const expectedSha = '${{ steps.create-tags.outputs.sha }}';
+            console.log('Expected SHA', expectedSha);
+
+            if (mainTagSha !== expectedSha)
+              core.setFailed(`main tag is not correct [${mainTagSha}]`);
+
+            if (majorTagSha !== expectedSha)
+              core.setFailed(`major tag is not correct [${majorTagSha}]`);
+
+            if (minorTagSha !== expectedSha)
+              core.setFailed(`minor tag is not correct [${minorTagSha}]`);
+
+            if (ephemeralTagSha !== expectedSha)
+              core.setFailed(`ephemeral tag is not correct [${ephemeralTagSha}]`);
+
+      - name: Should replace existing tags - Act
+        id: replace-tags
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1.2.3
+          additional-target-tags: |
+            test-latest
+            test-ephemeral
+          include-major: true
+          include-latest: false
+          force-target: true
+
+      - name: Should replace existing tags - Assert
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const getTagSha = async tag => {
+              try {
+                const { data } = await github.rest.git.getRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+                return data.object.sha;
+              }
+              catch (e) {
+                if (e.status === 404) return null;
+                throw new Error(`Retrieving refs failed with the following error: ${e}`)
+              }
+            };
+
+            const mainTagSha = await getTagSha('1.2.3');
+            const majorTagSha = await getTagSha('1');
+            const minorTagSha = await getTagSha('1.2');
+            const latestTagSha = await getTagSha('test-latest');
+            const ephemeralTagSha = await getTagSha('test-ephemeral');
+
+            const expectedSha = '${{ steps.replace-tags.outputs.sha }}';
+            console.log('Expected SHA', expectedSha);
+
+            if (mainTagSha !== expectedSha)
+              core.setFailed(`main tag is not correct [${mainTagSha}]`);
+
+            if (majorTagSha !== expectedSha)
+              core.setFailed(`major tag is not correct [${majorTagSha}]`);
+
+            if (latestTagSha !== expectedSha)
+              core.setFailed(`latest tag is not correct [${latestTagSha}]`);
+
+            if (ephemeralTagSha !== expectedSha)
+              core.setFailed(`ephemeral tag is not correct [${ephemeralTagSha}]`);
+
+            if (minorTagSha !== '${{ steps.create-tags.outputs.sha }}')
+              core.setFailed(`minor tag is not correct [${{ steps.create-tags.outputs.sha }}]`);
+
+      - name: Should fail on bad version - Act
+        continue-on-error: true
+        id: fail-version
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: v1.0.0-beta.1
+
+      - name: Should fail existing target - Act
+        continue-on-error: true
+        id: fail-existing
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1.2.3
+
+      - name: Should Fail - Assert
+        if: >-
+          ${{
+            steps.fail-version.outcome != 'failure' ||
+            steps.fail-existing.outcome != 'failure'
+          }}
+        run: exit 1
+
+      - name: Standard Tests - Post Cleanup
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deleteTag = async tag => {
+              try {
+                await github.rest.git.deleteRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+              }
+              catch(e) { }
+            };
+
+            await deleteTag('1');
+            await deleteTag('1.2');
+            await deleteTag('1.2.3');
+            await deleteTag('test-latest');
+            await deleteTag('test-ephemeral');
+
+      # Create Major from a release
+      # ----------------
+
+      - name: Should create major tag from release - Arrange
+        uses: im-open/create-release@v3.1.2
+        id: create-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tag-name: 1.2.3
+          commitish: ${{ steps.create-tags.outputs.sha }}
+
+      - name: Should create major tag from release - Act
+        id: create-release-major
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ steps.create-tags.outputs.sha }}
+          source-tag: 1.2.3
+          include-latest: false
+
+      - name: Should create major tag from release - Assert
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const getTagSha = async tag => {
+              try {
+                const { data } = await github.rest.git.getRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+                return data.object.sha;
+              }
+              catch (e) {
+                if (e.status === 404) return null;
+                throw new Error(`Retrieving refs failed with the following error: ${e}`)
+              }
+            };
+
+            const releaseSha = await getTagSha('1.2.3');
+            const majorTagSha = await getTagSha('1');
+
+            if (releaseSha !== majorTagSha)
+              core.setFailed(`release tag's sha [${releaseSha}] is not the same as the major tag's sha [${majorTagSha}]`);
+
+      - name: Should create major tag from release - Post Cleanup
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deleteTag = async tag => {
+              try {
+                await github.rest.git.deleteRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+              }
+              catch(e) { }
+            };
+
+            await github.rest.repos.deleteRelease({
+              ...context.repo,
+              release_id: '${{ steps.create-release.outputs.release-id }}'
+            });
+
+            await deleteTag('1');
+            await deleteTag('1.2.3');
+
+      # Fail on Pre-release
+      # ----------------
+
+      - name: Should fail on Pre-release - Arrange
+        uses: im-open/create-release@v3.1.2
+        id: create-pre-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tag-name: 1.2.4
+          commitish: ${{ steps.create-tags.outputs.sha }}
+          prerelease: true
+
+      - name: Should fail on Pre-release - Act
+        continue-on-error: true
+        id: fail-prerelease
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ steps.create-tags.outputs.sha }}
+          source-tag: 1.2.4
+          include-latest: false
+
+      - name: Should fail on Pre-release - Assert
+        if: steps.fail-prerelease.outcome != 'failure'
+        run: exit 1
+
+      - name: Should fail on Pre-release - Post Cleanup
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deleteTag = async tag => {
+              try {
+                await github.rest.git.deleteRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+              }
+              catch(e) { }
+            };
+
+            await github.rest.repos.deleteRelease({
+              ...context.repo,
+              release_id: '${{ steps.create-pre-release.outputs.release-id }}'
+            });
+
+            await deleteTag('1');
+            await deleteTag('1.2.4');
