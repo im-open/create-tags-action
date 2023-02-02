@@ -1,6 +1,7 @@
 // https://www.npmjs.com/package/@actions/core
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { WebhookPlayloadExtended } from './types';
 import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
 import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
 import TargetTag, { TargetVersionedTag } from './TargetTag';
@@ -34,7 +35,6 @@ function provisionTargetTags() {
   const targetTags = [];
 
   if (targetTagInput) {
-    console.debug(`Processing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
 
@@ -42,7 +42,6 @@ function provisionTargetTags() {
 
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    console.debug(`Processing major-tag [${majorTag}]`);
 
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core.setOutput('major-tag', majorTag);
@@ -51,21 +50,17 @@ function provisionTargetTags() {
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
-    console.debug(`Processing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput('major-minor-tag', majorMinorTag);
   }
 
   if (includeLatestTag && referenceTag) {
-    console.debug('Inlucding latest tag');
     targetTags.push(TargetTag.for('latest', { canOverwrite: true }));
   }
 
   const additionalTargetTags = additionalTargetTagInputs
     .filter(tag => tag)
     .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
-
-  console.debug(`Processing additional-target-tags [${additionalTargetTags.join(', ')}]`);
 
   return targetTags.concat(additionalTargetTags).sort();
 }
@@ -86,7 +81,7 @@ async function run() {
     shaInput ??
     (await getShaFromTag(octokit, sourceTagInput)) ??
     github.context.eventName === 'pull_request'
-      ? github.context.payload.pull_request.head.sha
+      ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
       : github.context.sha;
 
   core.setOutput('sha', sha);
@@ -102,12 +97,12 @@ async function run() {
     return;
   }
 
-  console.debug('Validating references...');
+  console.debug(`Validating references [${targetTags.join(', ')}]...`);
   for (const tag of targetTags) {
-    if (!(await tagExists(octokit, tag))) continue;
+    if (!(await tagExists(octokit, tag.value))) continue;
 
     tag.found();
-    if (await tagHasRelease(octokit, tag)) tag.foundRelease();
+    if (await tagHasRelease(octokit, tag.value)) tag.foundRelease();
   }
 
   // Tally up all failures instead of existing on first failure
@@ -132,15 +127,19 @@ async function run() {
     return;
   }
 
-  console.debug('Upserting references...');
-  targetTags.forEach(async tag => await createTag(tag));
+  for (const tag of targetTags) {
+    await createTag(octokit, tag, sha);
+  }
 
-  core.info(`Tags [${targetTags.join(', ')}] point to ${sourceTagInput || sha}.`);
+  core.info(`Tags [${targetTags.join(', ')}] now point to ${sourceTagInput || sha}!`);
+
+  const tagsUpdated = targetTags.filter(tag => tag.exists);
+  if (tagsUpdated.length) console.info(`Tags [${tagsUpdated.join(', ')}] updated`);
 
   core.setOutput('tags', targetTags.join(','));
 }
 
-run().catch(error => {
+run().catch((error: Error) => {
   core.setFailed(error.message);
   throw error;
 });

@@ -57,7 +57,8 @@ jobs:
             test-mine
           include-major: true
           include-major-minor: true
-          force-target: true # overwrites 1.2.3 if it already exists
+          include-latest: false
+          force-target: true # overwrites 1.2.3
 
       - name: Should update 3 tags and create 1 new tag
         uses: actions/github-script@v6
@@ -70,7 +71,7 @@ jobs:
                   ...context.repo,
                   ref: `tags/${tag}`
                 });
-                console.log(data)
+                console.debug(data)
                 return data;
               }
               catch (e) {
@@ -84,4 +85,4 @@ jobs:
             const mineTag = getTag('test-mine');
 
             if (!mainTag || mainTag.sha !== '${{ steps.standalone.outputs.sha }}')
-              core.setFailure(`main tag is not correct [${maintag}:${mainTag.sha}]`);
+              core.setFailure(`main tag is not correct [${mainTag}:${mainTag.sha}]`);

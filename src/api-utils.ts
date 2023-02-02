@@ -31,7 +31,6 @@ export async function getShaFromTag(octokit: InstanceType<typeof GitHub>, tag: s
 
 export async function tagHasRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
   const release = await getRelease(octokit, tag);
-  console.debug(release);
   return release !== null;
 }
 
@@ -50,8 +49,6 @@ export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: stri
 }
 
 export async function createTag(octokit: InstanceType<typeof GitHub>, tag: TargetTag, sha: string) {
-  console.debug(`Generating tag [${tag}]...`);
-
   if (!tag.upsertable) throw new Error(`Reference tag [${tag}] already exists`);
 
   try {
@@ -66,7 +63,6 @@ export async function createTag(octokit: InstanceType<typeof GitHub>, tag: Targe
         ref: `tags/${tag}`,
         force: true
       });
-      console.debug(`Updated existing tag [${tag}]`);
       return;
     }
 
@@ -74,8 +70,6 @@ export async function createTag(octokit: InstanceType<typeof GitHub>, tag: Targe
       ...payload,
       ref: `refs/tags/${tag}`
     });
-
-    console.debug(`Created new tag [${tag}]`);
   } catch (e) {
     throw new Error(`Unable to create or upsert tag [${tag}] with the following error: ${e}`);
   }

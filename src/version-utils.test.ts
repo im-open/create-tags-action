@@ -1,75 +1,24 @@
+import { SemVer } from 'semver';
 import * as system from './version-utils';
-
-const stableSemver = {
-  options: {},
-  loose: false,
-  includePrerelease: false,
-  raw: 'v1.0.0',
-  major: 1,
-  minor: 0,
-  patch: 0,
-  prerelease: [],
-  build: [],
-  version: '1.0.0'
-};
-
-const stableBuildSemver = {
-  options: {},
-  loose: false,
-  includePrerelease: false,
-  raw: '1.0.0+20130313144700',
-  major: 1,
-  minor: 0,
-  patch: 0,
-  prerelease: [],
-  build: ['20130313144700'],
-  version: '1.0.0'
-};
-
-const preReleaseSemver = {
-  options: {},
-  loose: false,
-  includePrerelease: false,
-  raw: 'v1.0.0-beta.1',
-  major: 1,
-  minor: 0,
-  patch: 0,
-  prerelease: ['beta', 1],
-  build: [],
-  version: '1.0.0-beta.1'
-};
-
-const preReleaseBuildSemver = {
-  options: {},
-  loose: false,
-  includePrerelease: false,
-  raw: 'v1.0.0-beta.1+20130313144700',
-  major: 1,
-  minor: 0,
-  patch: 0,
-  prerelease: ['beta', 1],
-  build: ['20130313144700'],
-  version: '1.0.0-beta.1'
-};
 
 describe('Is version stable', () => {
   it('validate if a version is stable', () => {
-    const semverVersion = stableSemver;
+    const semverVersion = new SemVer('v1.0.0');
     expect(system.isStableSemverVersion(semverVersion)).toBeTruthy();
   });
 
   it('validate if a version with build metadata is stable', () => {
-    const semverVersion = stableBuildSemver;
+    const semverVersion = new SemVer('1.0.0+20130313144700');
     expect(system.isStableSemverVersion(semverVersion)).toBeTruthy();
   });
 
   it('validate if a pre-release version is not stable', () => {
-    const semverVersion = preReleaseSemver;
+    const semverVersion = new SemVer('v1.0.0-beta.1');
     expect(system.isStableSemverVersion(semverVersion)).toBeFalsy();
   });
 
   it('validate if a pre-release version with build metadata is not stable', () => {
-    const semverVersion = preReleaseBuildSemver;
+    const semverVersion = new SemVer('v1.0.0-beta.1+20130313144700');
     expect(system.isStableSemverVersion(semverVersion)).toBeFalsy();
   });
 });
@@ -88,19 +37,19 @@ describe('Validate Semver from tag', () => {
   });
 
   it('throw when a tag contains an invalid semantic version', () => {
-    expect(() => system.validateSemverVersionFromTag('1.0.0invalid')).toThrowError(
+    expect(() => system.validateSemverVersionFromTag('1.0.0invalid')).toThrow(
       "Tag [1.0.0invalid] doesn't satisfy semantic versioning specification"
     );
   });
 
   it('throw when a tag contains an valid unstable semantic version', () => {
-    expect(() => system.validateSemverVersionFromTag('v1.0.0-beta.1')).toThrowError(
+    expect(() => system.validateSemverVersionFromTag('v1.0.0-beta.1')).toThrow(
       'It is not allowed to specify pre-release version tag [v1.0.0-beta.1]'
     );
   });
 
   it('throw when a tag contains an valid unstable semantic version with build metadata', () => {
-    expect(() => system.validateSemverVersionFromTag('v1.0.0-beta.1+20130313144700')).toThrowError(
+    expect(() => system.validateSemverVersionFromTag('v1.0.0-beta.1+20130313144700')).toThrow(
       'It is not allowed to specify pre-release version tag [v1.0.0-beta.1+20130313144700]'
     );
   });
