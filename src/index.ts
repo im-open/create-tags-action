@@ -92,7 +92,7 @@ async function run() {
     const release = await getRelease(octokit, sourceTagInput);
     if (release?.prerelease)
       throw new Error(
-        `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+        `Release [${release.name}] is marked as pre-release. Updating tags from a pre-release is not supported.`
       );
   }
 
@@ -151,7 +151,7 @@ async function run() {
   if (tagsUpdated.length) console.info(`Tags [${tagsUpdated.join(', ')}] updated.`);
 
   core.info(
-    `Tag${targetTags.length > 1 ? 's' : ''} now point${targetTags.length ? 's' : ''} to ${
+    `Tag${targetTags.length ? 's' : ''} now point${targetTags.length ? '' : 's'} to ${
       sourceTagInput || sha
     }!`
   );

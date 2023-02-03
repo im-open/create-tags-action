@@ -2,7 +2,6 @@ module.exports = {
   root: true,
   extends: [
     'eslint:recommended',
-    'plugin:import/typescript',
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'prettier'
