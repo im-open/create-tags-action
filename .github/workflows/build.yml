@@ -26,11 +26,20 @@ jobs:
       - name: Format and Build
         run: npm run all
 
-      - name: Compare the expected and actual results
+      # Taken from https://github.com/actions/reusable-workflows/blob/main/.github/workflows/check-dist.yml
+      - name: Compare the expected and actual dist directories
         run: |
-          if [ "$(git diff --ignore-space-at-eol | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build.  See status below:"
+          if [ "$(git diff --ignore-space-at-eol ${{inputs.folder-path}} | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after the build. See the status below:"
             git diff
             exit 1
           fi
         id: diff
+
+      # If inners of the dist directory were different than expected, upload the expected version as an artifact
+      - name: Upload artifact
+        if: ${{failure() && steps.diff.conclusion == 'failure'}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: ${{inputs.dist-path}}

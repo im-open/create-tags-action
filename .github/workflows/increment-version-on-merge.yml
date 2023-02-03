@@ -36,49 +36,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           default-release-type: major
 
-      - name: Create Major and Latest Releases
-        uses: actions/github-script@v6
+      - name: Create Major and Latest Tags
+        uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const majorOnlyTag = '${{ steps.version.outputs.NEXT_VERSION }}'.split('.')[0];
-            const sha = context.sha;
-
-            const tagExists = async tag => {
-              try {
-                const { data } = await github.rest.git.getRef({
-                  ...context.repo,
-                  ref: `tags/${tag}`
-                });
-                return data ? true : false;
-              }
-              catch (e) {
-                if (e.status === 404) return false;
-                throw new Error(`Retrieving refs failed with the following error: ${e}`)
-              }
-            }
-
-            const upsertRef = async tag => {
-              const payload = {
-                ...context.repo,
-                sha
-              };
-
-              const foundTag = await tagExists(tag);
-              console.debug(`Tag [${tag}] is found?`, foundTag);
-              
-              if (foundTag) {
-                await github.rest.git.updateRef({
-                  ...payload,
-                  ref: `tags/${tag}`,
-                  force: true
-                });
-                return;
-              }  
-              github.rest.git.createRef({
-                ...payload,
-                ref: `refs/tags/${tag}`,
-              });
-            };
-
-            await upsertRef(majorOnlyTag);
+          sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
+          source-tag: ${{ steps.version.outputs.NEXT_VERSION }}
+          include-major: true
+          include-latest: true

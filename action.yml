@@ -1,6 +1,6 @@
-name: Upsert Tagged Releases
+name: Create Multiple Tags
 author: Brady Clifford
-description: Creates or updates release tags
+description: Creates or updates multiple tags
 
 # Concept taken from https://github.com/actions/publish-action
 # https://github.com/actions/javascript-action
@@ -15,25 +15,30 @@ inputs:
     required: false
 
   source-tag:
-    description: Tag to reference when generating the target tag(s). The 'sha' and 'source-tag' cannot be included together.
+    description: Tag to reference when generating the target tag(s). The 'sha' will override the 'source-tag'.
     required: false
 
   target-tag:
-    description: Tagged release to create based off of the 'source-tag' or 'sha'
+    description: Tag to create based off of the 'source-tag' or 'sha'
     required: false
 
   additional-target-tags:
-    description: List of tagged releases to create based off of the 'source-tag' or 'sha'
+    description: List of tags to create based off of the 'source-tag' or 'sha'
     required: false
 
   include-major:
-    description: Create a tagged release of just the major from the 'source-tag'. i.e. v1
-    default: 'false'
+    description: Create a tag of just the major from the 'source-tag'. i.e. v1
+    default: 'true'
     required: false
 
   include-major-minor:
-    description: Create a tagged release of just the major and minor from the 'source-tag'. i.e. v1.2
+    description: Create a tag of just the major and minor from the 'source-tag'. i.e. v1.2
     default: 'false'
+    required: false
+
+  include-latest:
+    description: Create a tag named 'latest'
+    default: 'true'
     required: false
 
   force-target:

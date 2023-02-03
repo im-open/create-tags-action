@@ -1,17 +1,17 @@
 {
+  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    "target": "es2021",
-    "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": ".",
     "noEmit": true,
-    "lib": "ESNext",
-    "downlevelIteration": true,
+    "baseUrl": ".",
     "strict": true,
+    "lib": ["esnext"],
+    "module": "esnext",
     "moduleResolution": "node",
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
 }

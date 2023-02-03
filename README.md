@@ -1,10 +1,15 @@
-[![CI - Increment Version on Merge](https://github.com/im-enrollment/upsert-tagged-releases-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/upsert-tagged-releases-action/actions/workflows/increment-version-on-merge.yml)
+[![CI - Increment Version on Merge](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml)
 
-# Upsert Release Tags Action
+# Create Multiple Tags Action
 
-Creates or updates release tags. The source tag and target tags cannot not be pre-releases.
+Creates or update tags that are not associated with a published release.
 
-Easily generates additonal major `v1` and `latest` tags.
+- The source tag cannot have an associated pre-releases.
+- The target tags cannot have associated releases.
+- Easily generates additonal major `v1` and `latest` tags.
+- Cannot create tags associated with a pre-release.
+
+> Generally used in workflows that maintain GitHub Actions and Terraform Modules
 
 ## Index
 
@@ -25,18 +30,29 @@ Easily generates additonal major `v1` and `latest` tags.
 | -------------------------- | ----------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-token`             | true        |         | Token required to get an authenticated Octokit.                                                                                                                             |
 | `sha`                      | false       |         | SHA to reference by the 'target-tag' and 'additional-target-tags'. If not provided, gets the referenced SHA from the 'source-tag' or defaults to the current context's SHA. |
-| `source-tag`               | false       |         | Tag to reference when generating the target tag(s). The 'sha' and 'source-tag' cannot be included together.                                                                 |
-| `target-tag`               | false       |         | Tagged release to create based off of the 'source-tag' or 'sha'.                                                                                                            |
-| `additional-target-tags`   | false       |         | List of tagged releases to create based off of the 'source-tag' or 'sha'.                                                                                                   |
-| `include-major`            | false       | `false` | Create a tagged release of just the major from the 'source-tag'. v1.2.3 = v1                                                                                                |
-| `include-major-minor`      | false       | `false` | Create a tagged release of just the major and minor from the 'source-tag'. v1.2.3 = v1.                                                                                     |
+| `source-tag`               | false       |         | Tag to reference when generating the target tag(s). The 'sha' will override the 'source-tag'. The tag cannot have an associated pre-release                                 |
+| `target-tag`               | false       |         | Tag to create based off of the 'source-tag' or 'sha'. The tag cannot have an associated release.                                                                            |
+| `additional-target-tags`   | false       |         | List of tags to create based off of the 'source-tag' or 'sha'.                                                                                                              |
+| `include-major`            | false       | `true`  | Create a tag of just the major from the 'source-tag'. v1.2.3 = v1                                                                                                           |
+| `include-major-minor`      | false       | `false` | Create a tag of just the major and minor from the 'source-tag'. v1.2.3 = v1.                                                                                                |
+| `include-latest`           | false       | `true`  | Create a tag named `latest`                                                                                                                                                 |
 | `force-target`             | false       | `false` | Overwrite the 'target-tag' if it already exists                                                                                                                             |
 | `force-additional-targets` | false       | `true`  | Overwrite the target tags in the 'additional-taget-tags' input if it already exists                                                                                         |
 | `fail-on-invalid-version`  | false       | `true`  | Forces semver validation check on the 'source-tag' and 'target-tag'                                                                                                         |
 
-> Additional inputs can be found on the [action definition](https://github.com/im-enrollment/upsert-tagged-releases-action/blob/main/action.yml)
+> Additional inputs can be found on the [action definition](https://github.com/im-enrollment/create-tags-action/blob/main/action.yml)
 
-## Usage Examples
+## Outputs
+
+| Output            | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `tags`            | comma-seperated list of tags created or updated  |
+| `major-tag`       | major versioned tag created or updated           |
+| `major-minor-tag` | major and minor versioned tag created or updated |
+
+## Usage
+
+This action can be triggered automatically when a release is created or manually using a workflow_dispatch event. The actual major tag update will require manual approval. See release-new-action-version.yml for usage example.
 
 ### Standalone
 
@@ -46,22 +62,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Compute destination parts
-        uses: im-enrollment/upsert-tagged-releases@v1
+        uses: im-enrollment/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target-tag: v1.2.3
           additional-target-tags: | # by default ovewrites these tags if already exist
-            latest
             mine
+            yours
           include-major: true
+          include-latest: true
           force-target: true # overwrites v1.2.3 if it already exists
 
 
-  # Creates tagged releases based on the current context's sha:
-  # v1.2.3
-  # v1
-  # latest
-  # mine
+  # Creates tag based on the current context's sha:
+  # v1.2.3, v1, latest, mine, yours
 ```
 
 ### With git-version-lite
@@ -82,18 +96,16 @@ jobs:
       # Generates a next version of v1.2.3
 
       - name: Compute destination parts
-        uses: im-enrollment/upsert-tagged-releases@v1
+        uses: im-enrollment/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
-          target-tag: ${{ steps.version.outputs.NEXT_VERSION }}
-          additional-target-tags: latest
+          source-target: ${{ steps.version.outputs.NEXT_VERSION }}
           include-major: true
+          include-latest: false
 
-  # Creates tagged releases based off of the sha from git-version-lite:
-  # v1.2.3
-  # v1
-  # latest
+  # Creates tag based off of the sha from git-version-lite:
+  # v1, latest
 ```
 
 > See workflow automated test for more examples

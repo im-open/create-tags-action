@@ -1,14 +1,10 @@
 // https://www.npmjs.com/package/@actions/core
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { GitHub } from '@actions/github/lib/utils';
+import { WebhookPlayloadExtended } from './types';
 import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
-import {
-  tagExists,
-  getShaFromTag,
-  isTaggedReleasePublished,
-  validateIfTaggedReleaseIsPublished,
-  createTag
-} from './api-utils';
+import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
 import TargetTag, { TargetVersionedTag } from './TargetTag';
 
 const token = core.getInput('github-token', { required: true });
@@ -21,6 +17,7 @@ const additionalTargetTagInputs = core.getMultilineInput('additional-target-tags
 
 const includeMajorTag = core.getBooleanInput('include-major');
 const includeMajorMinorTag = core.getBooleanInput('include-major-minor');
+const includeLatestTag = core.getBooleanInput('include-latest');
 
 const forceMainTargetTagCreation = core.getBooleanInput('force-target');
 const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional-targets');
@@ -31,9 +28,6 @@ function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
 
-  if (shaInput && sourceTagInput)
-    throw new TypeError('A sha and source-tag cannot be included together');
-
   if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
   if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
 }
@@ -42,7 +36,6 @@ function provisionTargetTags() {
   const targetTags = [];
 
   if (targetTagInput) {
-    console.debug(`Processsing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
 
@@ -50,7 +43,6 @@ function provisionTargetTags() {
 
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    console.debug(`Processsing major-tag [${majorTag}]`);
 
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
     core.setOutput('major-tag', majorTag);
@@ -59,33 +51,52 @@ function provisionTargetTags() {
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
-    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
     core.setOutput('major-minor-tag', majorMinorTag);
+  }
+
+  if (includeLatestTag && referenceTag) {
+    targetTags.push(TargetTag.for('latest', { canOverwrite: true }));
   }
 
   const additionalTargetTags = additionalTargetTagInputs
     .filter(tag => tag)
     .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
 
-  console.debug(`Processing additional tags [${additionalTargetTags.join(', ')}]`);
+  return targetTags.concat(additionalTargetTags).sort();
+}
 
-  return targetTags.concat(additionalTargetTags);
+async function resolveSha(octokit: InstanceType<typeof GitHub>) {
+  if (shaInput) return shaInput;
+
+  let sha;
+  if (sourceTagInput) {
+    sha = await getShaFromTag(octokit, sourceTagInput);
+  }
+
+  if (!sha) {
+    sha =
+      github.context.eventName === 'pull_request'
+        ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
+        : github.context.sha;
+  }
+
+  return sha;
 }
 
 async function run() {
   validateInputs();
 
   const octokit = github.getOctokit(token);
-  if (sourceTagInput) await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
+  if (sourceTagInput) {
+    const release = await getRelease(octokit, sourceTagInput);
+    if (release?.prerelease)
+      throw new Error(
+        `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+      );
+  }
 
-  const sha =
-    shaInput ??
-    (await getShaFromTag(octokit, sourceTagInput)) ??
-    github.context.eventName === 'pull_request'
-      ? github.context.payload.pull_request.head.sha
-      : github.context.sha;
-
+  const sha = await resolveSha(octokit);
   core.setOutput('sha', sha);
 
   const targetTags = provisionTargetTags();
@@ -95,26 +106,33 @@ async function run() {
   );
 
   if (tagsAsVersionsNotStable.length) {
-    core.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(', ')}]`);
+    core.setFailed(`Unstable versioned tags [${tagsAsVersionsNotStable.join(', ')}]`);
     return;
   }
 
+  console.debug(`Validating references [${targetTags.join(', ')}]...`);
   for (const tag of targetTags) {
-    if (await isTaggedReleasePublished(octokit, tag)) tag.markPublished();
-    if (await tagExists(octokit, tag)) tag.found();
+    if (!(await tagExists(octokit, tag.value))) continue;
+
+    tag.found();
+    if (await tagHasRelease(octokit, tag.value)) tag.foundRelease();
   }
 
   // Tally up all failures instead of existing on first failure
   const failureMessages = [];
 
-  const tagsAreNotOverwrittable = targetTags.filter(tag => !tag.canUpsert);
-  if (tagsAreNotOverwrittable.length) {
-    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwrittable.join(', ')}]`);
+  const tagsAreNotOverwritable = targetTags.filter(tag => !tag.upsertable);
+  if (tagsAreNotOverwritable.length) {
+    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(', ')}]`);
   }
 
-  const tagsAreNotPublished = targetTags.filter(tag => !tag.isPublished);
-  if (tagsAreNotPublished.length) {
-    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(', ')}]`);
+  const tagsWithRelease = targetTags.filter(tag => tag.hasRelease);
+  if (tagsWithRelease.length) {
+    failureMessages.push(
+      `Unable to update tags with an associated release [${tagsWithRelease.join(
+        ', '
+      )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+    );
   }
 
   if (failureMessages.length) {
@@ -122,11 +140,25 @@ async function run() {
     return;
   }
 
-  targetTags.forEach(tag => createTag(tag));
-  core.info(`Tags [${targetTags.join(', ')}] now point to ${sourceTagInput || sha}`);
+  for (const tag of targetTags) {
+    await createTag(octokit, tag, sha);
+  }
+
+  const tagsCreated = targetTags.filter(tag => !tag.exists);
+  if (tagsCreated.length) console.info(`Tags [${tagsCreated.join(', ')}] created.`);
+
+  const tagsUpdated = targetTags.filter(tag => tag.exists);
+  if (tagsUpdated.length) console.info(`Tags [${tagsUpdated.join(', ')}] updated.`);
+
+  core.info(
+    `Tag${targetTags.length > 1 ? 's' : ''} now point${targetTags.length ? 's' : ''} to ${
+      sourceTagInput || sha
+    }!`
+  );
+  core.setOutput('tags', targetTags.join(','));
 }
 
-run().catch(error => {
+run().catch((error: Error) => {
   core.setFailed(error.message);
   throw error;
 });
