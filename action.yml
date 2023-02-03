@@ -2,7 +2,7 @@ name: Create Multiple Tags
 author: Brady Clifford
 description: Creates or updates multiple tags
 
-# Concept taken from https://github.com/actions/publish-action
+# Concept from https://github.com/actions/publish-action
 # https://github.com/actions/javascript-action
 
 inputs:

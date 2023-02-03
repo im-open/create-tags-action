@@ -22,8 +22,6 @@ on:
       - 'dist/**'
       - 'src/**'
 
-  workflow_dispatch:
-
 jobs:
   build:
     uses: ./.github/workflows/build.yml
