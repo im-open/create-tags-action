@@ -23,15 +23,12 @@ on:
       - 'src/**'
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yml
-
   tests:
     uses: ./.github/workflows/tests.yml
 
   increment-version:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
-    needs: [build, tests]
+    needs: [tests]
     runs-on: ubuntu-latest
 
     steps:
