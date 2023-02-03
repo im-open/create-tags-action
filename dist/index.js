@@ -8428,7 +8428,7 @@ function run() {
       const release = yield getRelease(octokit, sourceTagInput);
       if (release == null ? void 0 : release.prerelease)
         throw new Error(
-          `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+          `Release [${release.name}] is marked as pre-release. Updating tags from a pre-release is not supported.`
         );
     }
     const sha = yield resolveSha(octokit);
@@ -8476,7 +8476,7 @@ function run() {
     if (tagsUpdated.length)
       console.info(`Tags [${tagsUpdated.join(", ")}] updated.`);
     core.info(
-      `Tag${targetTags.length > 1 ? "s" : ""} now point${targetTags.length ? "s" : ""} to ${sourceTagInput || sha}!`
+      `Tag${targetTags.length ? "s" : ""} now point${targetTags.length ? "" : "s"} to ${sourceTagInput || sha}!`
     );
     core.setOutput("tags", targetTags.join(","));
   });

@@ -2,14 +2,14 @@
 
 # Create Multiple Tags Action
 
-Creates or update tags that are not associated with a published release.
+Creates or updates tags. Easiy generate additional major `v1` and `latest` tags.
 
-- The source tag cannot have an associated pre-releases.
-- The target tags cannot have associated releases.
-- Easily generates additonal major `v1` and `latest` tags.
-- Cannot create tags associated with a pre-release.
+- The source tag cannot be associated with a pre-releases.
+- The target tags cannot be assigned to a release.
 
 > Generally used in workflows that maintain GitHub Actions and Terraform Modules
+
+To generate a major release like `v1`, use instead [im-open/create-release](https://github.com/im-open/create-release).
 
 ## Index
 
@@ -29,16 +29,16 @@ Creates or update tags that are not associated with a published release.
 | Parameter                  | Is Required | Default | Description                                                                                                                                                                 |
 | -------------------------- | ----------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-token`             | true        |         | Token required to get an authenticated Octokit.                                                                                                                             |
-| `sha`                      | false       |         | SHA to reference by the 'target-tag' and 'additional-target-tags'. If not provided, gets the referenced SHA from the 'source-tag' or defaults to the current context's SHA. |
-| `source-tag`               | false       |         | Tag to reference when generating the target tag(s). The 'sha' will override the 'source-tag'. The tag cannot have an associated pre-release                                 |
-| `target-tag`               | false       |         | Tag to create based off of the 'source-tag' or 'sha'. The tag cannot have an associated release.                                                                            |
-| `additional-target-tags`   | false       |         | List of tags to create based off of the 'source-tag' or 'sha'.                                                                                                              |
-| `include-major`            | false       | `true`  | Create a tag of just the major from the 'source-tag'. v1.2.3 = v1                                                                                                           |
-| `include-major-minor`      | false       | `false` | Create a tag of just the major and minor from the 'source-tag'. v1.2.3 = v1.                                                                                                |
+| `sha`                      | false       |         | SHA to reference by the `target-tag` and `additional-target-tags`. If not provided, gets the referenced SHA from the `source-tag` or defaults to the current context`s SHA. |
+| `source-tag`               | false       |         | Tag to reference when generating the target tag(s). The `sha` will override the `source-tag`. The tag cannot have an associated pre-release                                 |
+| `target-tag`               | false       |         | Tag to create based off of the `source-tag` or `sha`. The tag cannot have an associated release.                                                                            |
+| `additional-target-tags`   | false       |         | List of tags to create based off of the `source-tag` or `sha`.                                                                                                              |
+| `include-major`            | false       | `true`  | Create a tag of just the major from the `source-tag`. _v1.2.3 = v1_                                                                                                         |
+| `include-major-minor`      | false       | `false` | Create a tag of just the major and minor from the `source-tag`. _v1.2.3 = v1_                                                                                               |
 | `include-latest`           | false       | `true`  | Create a tag named `latest`                                                                                                                                                 |
-| `force-target`             | false       | `false` | Overwrite the 'target-tag' if it already exists                                                                                                                             |
-| `force-additional-targets` | false       | `true`  | Overwrite the target tags in the 'additional-taget-tags' input if it already exists                                                                                         |
-| `fail-on-invalid-version`  | false       | `true`  | Forces semver validation check on the 'source-tag' and 'target-tag'                                                                                                         |
+| `force-target`             | false       | `false` | Overwrite the `target-tag` if it already exists                                                                                                                             |
+| `force-additional-targets` | false       | `true`  | Overwrite the target tags in the `additional-taget-tags` input if it already exists                                                                                         |
+| `fail-on-invalid-version`  | false       | `true`  | Forces semver validation check on the `source-tag` and `target-tag`                                                                                                         |
 
 > Additional inputs can be found on the [action definition](https://github.com/im-enrollment/create-tags-action/blob/main/action.yml)
 
@@ -47,12 +47,11 @@ Creates or update tags that are not associated with a published release.
 | Output            | Description                                      |
 | ----------------- | ------------------------------------------------ |
 | `tags`            | comma-seperated list of tags created or updated  |
+| `sha`             | sha used to create the tag(s)                    |
 | `major-tag`       | major versioned tag created or updated           |
 | `major-minor-tag` | major and minor versioned tag created or updated |
 
 ## Usage
-
-This action can be triggered automatically when a release is created or manually using a workflow_dispatch event. The actual major tag update will require manual approval. See release-new-action-version.yml for usage example.
 
 ### Standalone
 
@@ -61,7 +60,7 @@ jobs:
   jobname:
     runs-on: ubuntu-latest
     steps:
-      - name: Compute destination parts
+      - name: Create various tags from current context's SHA
         uses: im-enrollment/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -74,7 +73,7 @@ jobs:
           force-target: true # overwrites v1.2.3 if it already exists
 
 
-  # Creates tag based on the current context's sha:
+  # Creates tag based on the current context`s sha:
   # v1.2.3, v1, latest, mine, yours
 ```
 
@@ -95,7 +94,7 @@ jobs:
 
       # Generates a next version of v1.2.3
 
-      - name: Compute destination parts
+      - name: Create Major and Latest tags that reference the same SHA as the main tag
         uses: im-enrollment/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -121,7 +120,7 @@ When creating new PRs please ensure:
 
 ### Recompiling
 
-If changes are made to the action's code in this repository, or its dependencies, you will need to re-compile the action.
+If changes are made to the action`s code in this repository, or its dependencies, you will need to re-compile the action.
 
 ```sh
 # Installs dependencies and bundles the code
@@ -147,7 +146,7 @@ This action uses [git-version-lite] to examine commit messages to determine whet
 
 ## Code of Conduct
 
-This project has adopted the [im-open's Code of Conduct](https://github.com/im-open/.github/blob/main/CODE_OF_CONDUCT.md).
+This project has adopted the [im-open`s Code of Conduct](https://github.com/im-open/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 

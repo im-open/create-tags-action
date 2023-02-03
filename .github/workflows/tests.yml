@@ -1,4 +1,4 @@
-name: CI - Tests
+name: 🧪 Tests
 on:
   pull_request:
     paths:
