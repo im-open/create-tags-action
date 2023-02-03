@@ -11,37 +11,37 @@ it('Should not exist when found', () => {
   expect(tag.exists).toBeFalsy();
 });
 
-it('Should be published', () => {
+it('Should have a release', () => {
   const tag = TargetTag.for('v1.2.3');
-  tag.markPublished();
-  expect(tag.isPublished).toBeTruthy();
+  tag.foundRelease();
+  expect(tag.hasRelease).toBeTruthy();
 });
 
-it('Should not be published', () => {
+it('Should not have a release', () => {
   const tag = TargetTag.for('v1.2.3');
-  expect(tag.isPublished).toBeFalsy();
+  expect(tag.hasRelease).toBeFalsy();
 });
 
 it('Can upsert when overwritable but and not found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: true });
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Can upsert when overwritable but found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: true });
   tag.found();
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Can upsert when not overwritable and not found', () => {
   const tag = TargetTag.for('v1.2.3', { canOverwrite: false });
-  expect(tag.canUpsert).toBeTruthy();
+  expect(tag.upsertable).toBeTruthy();
 });
 
 it('Cannot upsert when not overwritable but found', () => {
   const tag = TargetTag.for('v1.2.3');
   tag.found();
-  expect(tag.canUpsert).toBeFalsy();
+  expect(tag.upsertable).toBeFalsy();
 });
 
 it('Should convert to tag name on toString', () => {

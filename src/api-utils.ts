@@ -1,10 +1,10 @@
-import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { GitHub } from '@actions/github/lib/utils';
 import { RequestError } from '@octokit/types';
 import TargetTag from './TargetTag';
 
 async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
+  if (!tag) throw new TypeError('Tag is empty');
   try {
     // https://octokit.github.io/rest.js/v18#git-get-ref
     // https://docs.github.com/en/rest/reference/git#get-a-reference
@@ -16,7 +16,7 @@ async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
     return foundTag;
   } catch (e) {
     if ((e as RequestError).status === 404) return null;
-    throw new Error(`Retrieving refs failed with the following error: ${e}`);
+    throw new Error(`Retrieving ref by tag [${tag}] failed with the following error: ${e}`);
   }
 }
 
@@ -30,67 +30,50 @@ export async function getShaFromTag(octokit: InstanceType<typeof GitHub>, tag: s
   return foundTag.object.sha;
 }
 
-export async function isTaggedReleasePublished(octokit: InstanceType<typeof GitHub>, tag: string) {
-  try {
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
-      ...context.repo,
-      tag
-    });
-
-    return !foundRelease.prerelease;
-  } catch (e) {
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
-  }
+export async function tagHasRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+  const release = await getRelease(octokit, tag);
+  return release !== null;
 }
 
-export async function validateIfTaggedReleaseIsPublished(
-  octokit: InstanceType<typeof GitHub>,
-  tag: string
-) {
+export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+  if (!tag) throw new TypeError('Tag is empty');
   try {
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
+    const { data: release } = await octokit.rest.repos.getReleaseByTag({
       ...context.repo,
       tag
     });
 
-    if (!foundRelease.prerelease) return;
-
-    throw new Error(
-      `Release ['${foundRelease.name}'] is marked as pre-release. Updating tags for pre-release is not supported.`
-    );
+    return release;
   } catch (e) {
-    if ((e as RequestError).status === 404) {
-      throw new Error(`No GitHub release found for the [${tag}] tag`);
-    }
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
+    if ((e as RequestError).status === 404) return null;
+    throw new Error(`Retrieving release by tag [${tag}] failed with the following error: ${e}`);
   }
 }
 
 export async function createTag(octokit: InstanceType<typeof GitHub>, tag: TargetTag, sha: string) {
-  core.info(`Generating the ref [${tag}] on GitHub...`);
+  if (!tag) throw new TypeError('Tag is empty');
+  if (!tag.upsertable) throw new Error(`Reference tag [${tag}] already exists`);
 
-  if (!tag.isOverwritable && tag.exists) throw new Error(`Reference tag [${tag}] already exists`);
+  try {
+    const payload = {
+      ...context.repo,
+      sha
+    };
 
-  const payload = {
-    ...context.repo,
-    sha
-  };
+    if (tag.exists) {
+      await octokit.rest.git.updateRef({
+        ...payload,
+        ref: `tags/${tag}`,
+        force: true
+      });
+      return;
+    }
 
-  if (tag.exists) {
-    await octokit.rest.git.updateRef({
+    await octokit.rest.git.createRef({
       ...payload,
-      ref: `tags/${tag}`,
-      force: true
+      ref: `refs/tags/${tag}`
     });
-
-    core.info('Finished updating the tag.');
-    return;
+  } catch (e) {
+    throw new Error(`Unable to create or upsert tag [${tag}] with the following error: ${e}`);
   }
-
-  await octokit.rest.git.createRef({
-    ...payload,
-    ref: `refs/tags/${tag}`
-  });
-
-  core.info('Finished creating the tag.');
 }

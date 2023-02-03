@@ -1,10 +1,27 @@
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b ||= {})
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -49,6 +66,26 @@ var __privateSet = (obj, member, value, setter) => {
   __accessCheck(obj, member, "write to private field");
   setter ? setter.call(obj, value) : member.set(obj, value);
   return value;
+};
+var __async = (__this, __arguments, generator) => {
+  return new Promise((resolve, reject) => {
+    var fulfilled = (value) => {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var rejected = (value) => {
+      try {
+        step(generator.throw(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+    step((generator = generator.apply(__this, __arguments)).next());
+  });
 };
 
 // node_modules/@actions/core/lib/utils.js
@@ -1146,12 +1183,12 @@ var require_lib = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info3 = this._prepareRequest(verb, parsedUrl, headers);
+          let info2 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info3, data);
+            response = yield this.requestRaw(info2, data);
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
               let authenticationHandler;
               for (const handler of this.handlers) {
@@ -1161,7 +1198,7 @@ var require_lib = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info3, data);
+                return authenticationHandler.handleAuthentication(this, info2, data);
               } else {
                 return response;
               }
@@ -1184,8 +1221,8 @@ var require_lib = __commonJS({
                   }
                 }
               }
-              info3 = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info3, data);
+              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info2, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -1214,7 +1251,7 @@ var require_lib = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info3, data) {
+      requestRaw(info2, data) {
         return __awaiter(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
             function callbackForResult(err, res) {
@@ -1226,7 +1263,7 @@ var require_lib = __commonJS({
                 resolve(res);
               }
             }
-            this.requestRawWithCallback(info3, data, callbackForResult);
+            this.requestRawWithCallback(info2, data, callbackForResult);
           });
         });
       }
@@ -1236,12 +1273,12 @@ var require_lib = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info3, data, onResult) {
+      requestRawWithCallback(info2, data, onResult) {
         if (typeof data === "string") {
-          if (!info3.options.headers) {
-            info3.options.headers = {};
+          if (!info2.options.headers) {
+            info2.options.headers = {};
           }
-          info3.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -1250,7 +1287,7 @@ var require_lib = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info3.httpModule.request(info3.options, (msg) => {
+        const req = info2.httpModule.request(info2.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -1262,7 +1299,7 @@ var require_lib = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info3.options.path}`));
+          handleResult(new Error(`Request timeout: ${info2.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -1289,27 +1326,27 @@ var require_lib = __commonJS({
         return this._getAgent(parsedUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info3 = {};
-        info3.parsedUrl = requestUrl;
-        const usingSsl = info3.parsedUrl.protocol === "https:";
-        info3.httpModule = usingSsl ? https : http;
+        const info2 = {};
+        info2.parsedUrl = requestUrl;
+        const usingSsl = info2.parsedUrl.protocol === "https:";
+        info2.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info3.options = {};
-        info3.options.host = info3.parsedUrl.hostname;
-        info3.options.port = info3.parsedUrl.port ? parseInt(info3.parsedUrl.port) : defaultPort;
-        info3.options.path = (info3.parsedUrl.pathname || "") + (info3.parsedUrl.search || "");
-        info3.options.method = method;
-        info3.options.headers = this._mergeHeaders(headers);
+        info2.options = {};
+        info2.options.host = info2.parsedUrl.hostname;
+        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
+        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
+        info2.options.method = method;
+        info2.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info3.options.headers["user-agent"] = this.userAgent;
+          info2.options.headers["user-agent"] = this.userAgent;
         }
-        info3.options.agent = this._getAgent(info3.parsedUrl);
+        info2.options.agent = this._getAgent(info2.parsedUrl);
         if (this.handlers) {
           for (const handler of this.handlers) {
-            handler.prepareRequest(info3.options);
+            handler.prepareRequest(info2.options);
           }
         }
-        return info3;
+        return info2;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -2153,10 +2190,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
     exports.notice = notice;
-    function info3(message) {
+    function info2(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports.info = info3;
+    exports.info = info2;
     function startGroup(name) {
       command_1.issue("group", name);
     }
@@ -8154,8 +8191,8 @@ var require_parse = __commonJS({
   }
 });
 
-// src/index.js
-var core2 = __toESM(require_core());
+// src/index.ts
+var core = __toESM(require_core());
 var github = __toESM(require_github());
 
 // src/version-utils.ts
@@ -8192,97 +8229,98 @@ function validateSemverVersionFromTag(tag) {
 }
 
 // src/api-utils.ts
-var core = __toESM(require_core());
 var import_github = __toESM(require_github());
-async function getTag(octokit, tag) {
-  try {
-    const { data: foundTag } = await octokit.rest.git.getRef({
-      ...import_github.context.repo,
-      ref: `tags/${tag}`
-    });
-    return foundTag;
-  } catch (e) {
-    if (e.status === 404)
-      return null;
-    throw new Error(`Retrieving refs failed with the following error: ${e}`);
-  }
-}
-async function tagExists(octokit, tag) {
-  return await getTag(octokit, tag) ? true : false;
-}
-async function getShaFromTag(octokit, tag) {
-  const foundTag = await getTag(octokit, tag);
-  if (!foundTag)
-    throw new Error(`The tag [${tag}] does not exist. Unable to get sha.`);
-  return foundTag.object.sha;
-}
-async function isTaggedReleasePublished(octokit, tag) {
-  try {
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
-      ...import_github.context.repo,
-      tag
-    });
-    return !foundRelease.prerelease;
-  } catch (e) {
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
-  }
-}
-async function validateIfTaggedReleaseIsPublished(octokit, tag) {
-  try {
-    const { data: foundRelease } = await octokit.rest.repos.getReleaseByTag({
-      ...import_github.context.repo,
-      tag
-    });
-    if (!foundRelease.prerelease)
-      return;
-    throw new Error(
-      `Release ['${foundRelease.name}'] is marked as pre-release. Updating tags for pre-release is not supported.`
-    );
-  } catch (e) {
-    if (e.status === 404) {
-      throw new Error(`No GitHub release found for the [${tag}] tag`);
+function getTag(octokit, tag) {
+  return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
+    try {
+      const { data: foundTag } = yield octokit.rest.git.getRef(__spreadProps(__spreadValues({}, import_github.context.repo), {
+        ref: `tags/${tag}`
+      }));
+      return foundTag;
+    } catch (e) {
+      if (e.status === 404)
+        return null;
+      throw new Error(`Retrieving ref by tag [${tag}] failed with the following error: ${e}`);
     }
-    throw new Error(`Retrieving releases failed with the following error: ${e}`);
-  }
-}
-async function createTag(octokit, tag, sha) {
-  core.info(`Generating the ref [${tag}] on GitHub...`);
-  if (!tag.isOverwritable && tag.exists)
-    throw new Error(`Reference tag [${tag}] already exists`);
-  const payload = {
-    ...import_github.context.repo,
-    sha
-  };
-  if (tag.exists) {
-    await octokit.rest.git.updateRef({
-      ...payload,
-      ref: `tags/${tag}`,
-      force: true
-    });
-    core.info("Finished updating the tag.");
-    return;
-  }
-  await octokit.rest.git.createRef({
-    ...payload,
-    ref: `refs/tags/${tag}`
   });
-  core.info("Finished creating the tag.");
+}
+function tagExists(octokit, tag) {
+  return __async(this, null, function* () {
+    return (yield getTag(octokit, tag)) ? true : false;
+  });
+}
+function getShaFromTag(octokit, tag) {
+  return __async(this, null, function* () {
+    const foundTag = yield getTag(octokit, tag);
+    if (!foundTag)
+      throw new Error(`The tag [${tag}] does not exist. Unable to get sha.`);
+    return foundTag.object.sha;
+  });
+}
+function tagHasRelease(octokit, tag) {
+  return __async(this, null, function* () {
+    const release = yield getRelease(octokit, tag);
+    return release !== null;
+  });
+}
+function getRelease(octokit, tag) {
+  return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
+    try {
+      const { data: release } = yield octokit.rest.repos.getReleaseByTag(__spreadProps(__spreadValues({}, import_github.context.repo), {
+        tag
+      }));
+      return release;
+    } catch (e) {
+      if (e.status === 404)
+        return null;
+      throw new Error(`Retrieving release by tag [${tag}] failed with the following error: ${e}`);
+    }
+  });
+}
+function createTag(octokit, tag, sha) {
+  return __async(this, null, function* () {
+    if (!tag)
+      throw new TypeError("Tag is empty");
+    if (!tag.upsertable)
+      throw new Error(`Reference tag [${tag}] already exists`);
+    try {
+      const payload = __spreadProps(__spreadValues({}, import_github.context.repo), {
+        sha
+      });
+      if (tag.exists) {
+        yield octokit.rest.git.updateRef(__spreadProps(__spreadValues({}, payload), {
+          ref: `tags/${tag}`,
+          force: true
+        }));
+        return;
+      }
+      yield octokit.rest.git.createRef(__spreadProps(__spreadValues({}, payload), {
+        ref: `refs/tags/${tag}`
+      }));
+    } catch (e) {
+      throw new Error(`Unable to create or upsert tag [${tag}] with the following error: ${e}`);
+    }
+  });
 }
 
 // src/TargetTag.ts
 var import_parse4 = __toESM(require_parse());
-var _exists, _published;
+var _exists, _hasRelease;
 var _TargetTag = class {
   constructor(value, { canOverwrite = false } = { canOverwrite: false }) {
     __privateAdd(this, _exists, void 0);
-    __privateAdd(this, _published, void 0);
-    if (!value?.trim())
+    __privateAdd(this, _hasRelease, void 0);
+    if (!(value == null ? void 0 : value.trim()))
       throw new TypeError("value cannot be empty");
     this.value = value;
     this.isVersion = false;
-    this.isOverwritable = canOverwrite;
+    this.isOverwritableIfExists = canOverwrite;
     __privateSet(this, _exists, false);
-    __privateSet(this, _published, false);
+    __privateSet(this, _hasRelease, false);
   }
   get exists() {
     return __privateGet(this, _exists);
@@ -8290,14 +8328,14 @@ var _TargetTag = class {
   found() {
     __privateSet(this, _exists, true);
   }
-  get canUpsert() {
-    return this.isOverwritable || !this.exists;
+  get upsertable() {
+    return this.isOverwritableIfExists || !this.exists;
   }
-  get isPublished() {
-    return __privateGet(this, _published);
+  get hasRelease() {
+    return __privateGet(this, _hasRelease);
   }
-  markPublished() {
-    __privateSet(this, _published, true);
+  foundRelease() {
+    __privateSet(this, _hasRelease, true);
   }
   toString() {
     return this.value;
@@ -8308,7 +8346,7 @@ var _TargetTag = class {
 };
 var TargetTag = _TargetTag;
 _exists = new WeakMap();
-_published = new WeakMap();
+_hasRelease = new WeakMap();
 var _semver;
 var TargetVersionedTag = class extends TargetTag {
   constructor(value, options) {
@@ -8325,23 +8363,22 @@ var TargetVersionedTag = class extends TargetTag {
 };
 _semver = new WeakMap();
 
-// src/index.js
-var token = core2.getInput("github-token", { required: true });
-core2.setSecret(token);
-var shaInput = core2.getInput("sha");
-var sourceTagInput = core2.getInput("source-tag");
-var targetTagInput = core2.getInput("target-tag");
-var additionalTargetTagInputs = core2.getMultilineInput("additional-target-tags");
-var includeMajorTag = core2.getBooleanInput("include-major");
-var includeMajorMinorTag = core2.getBooleanInput("include-major-minor");
-var forceMainTargetTagCreation = core2.getBooleanInput("force-target");
-var forceAdditioanlTargetTagsCreation = core2.getBooleanInput("force-additional-targets");
-var failOnInvalidVersion = core2.getBooleanInput("fail-on-invalid-version");
+// src/index.ts
+var token = core.getInput("github-token", { required: true });
+core.setSecret(token);
+var shaInput = core.getInput("sha");
+var sourceTagInput = core.getInput("source-tag");
+var targetTagInput = core.getInput("target-tag");
+var additionalTargetTagInputs = core.getMultilineInput("additional-target-tags");
+var includeMajorTag = core.getBooleanInput("include-major");
+var includeMajorMinorTag = core.getBooleanInput("include-major-minor");
+var includeLatestTag = core.getBooleanInput("include-latest");
+var forceMainTargetTagCreation = core.getBooleanInput("force-target");
+var forceAdditioanlTargetTagsCreation = core.getBooleanInput("force-additional-targets");
+var failOnInvalidVersion = core.getBooleanInput("fail-on-invalid-version");
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError("A source-tag, target-tag or additional-target-tags must be provided");
-  if (shaInput && sourceTagInput)
-    throw new TypeError("A sha and source-tag cannot be included together");
   if (failOnInvalidVersion && sourceTagInput)
     validateSemverVersionFromTag(sourceTagInput);
   if (failOnInvalidVersion && targetTagInput)
@@ -8350,65 +8387,102 @@ function validateInputs() {
 function provisionTargetTags() {
   const targetTags = [];
   if (targetTagInput) {
-    console.debug(`Processsing target-tag [${targetTagInput}]`);
     targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
   }
   const referenceTag = targetTagInput || sourceTagInput;
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    console.debug(`Processsing major-tag [${majorTag}]`);
     targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
-    core2.setOutput("major-tag", majorTag);
+    core.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
-    console.debug(`Processsing major-minor tag [${majorMinorTag}]`);
     targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
-    core2.setOutput("major-minor-tag", majorMinorTag);
+    core.setOutput("major-minor-tag", majorMinorTag);
+  }
+  if (includeLatestTag && referenceTag) {
+    targetTags.push(TargetTag.for("latest", { canOverwrite: true }));
   }
   const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
-  console.debug(`Processing additional tags [${additionalTargetTags.join(", ")}]`);
-  return targetTags.concat(additionalTargetTags);
+  return targetTags.concat(additionalTargetTags).sort();
 }
-async function run() {
-  validateInputs();
-  const octokit = github.getOctokit(token);
-  if (sourceTagInput)
-    await validateIfTaggedReleaseIsPublished(octokit, sourceTagInput);
-  const sha = shaInput ?? await getShaFromTag(octokit, sourceTagInput) ?? github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
-  core2.setOutput("sha", sha);
-  const targetTags = provisionTargetTags();
-  const tagsAsVersionsNotStable = targetTags.filter(
-    (tag) => tag instanceof TargetVersionedTag && !tag.isStableVersion
-  );
-  if (tagsAsVersionsNotStable.length) {
-    core2.setFailed(`Unstable versioned-target tags [${tagsAsVersionsNotStable.join(", ")}]`);
-    return;
-  }
-  for (const tag of targetTags) {
-    if (await isTaggedReleasePublished(octokit, tag))
-      tag.markPublished();
-    if (await tagExists(octokit, tag))
+function resolveSha(octokit) {
+  return __async(this, null, function* () {
+    if (shaInput)
+      return shaInput;
+    let sha;
+    if (sourceTagInput) {
+      sha = yield getShaFromTag(octokit, sourceTagInput);
+    }
+    if (!sha) {
+      sha = github.context.eventName === "pull_request" ? github.context.payload.pull_request.head.sha : github.context.sha;
+    }
+    return sha;
+  });
+}
+function run() {
+  return __async(this, null, function* () {
+    validateInputs();
+    const octokit = github.getOctokit(token);
+    if (sourceTagInput) {
+      const release = yield getRelease(octokit, sourceTagInput);
+      if (release == null ? void 0 : release.prerelease)
+        throw new Error(
+          `Release ['${release.name}'] is marked as pre-release. Updating tags from a pre-release is not supported.`
+        );
+    }
+    const sha = yield resolveSha(octokit);
+    core.setOutput("sha", sha);
+    const targetTags = provisionTargetTags();
+    const tagsAsVersionsNotStable = targetTags.filter(
+      (tag) => tag instanceof TargetVersionedTag && !tag.isStableVersion
+    );
+    if (tagsAsVersionsNotStable.length) {
+      core.setFailed(`Unstable versioned tags [${tagsAsVersionsNotStable.join(", ")}]`);
+      return;
+    }
+    console.debug(`Validating references [${targetTags.join(", ")}]...`);
+    for (const tag of targetTags) {
+      if (!(yield tagExists(octokit, tag.value)))
+        continue;
       tag.found();
-  }
-  const failureMessages = [];
-  const tagsAreNotOverwrittable = targetTags.filter((tag) => !tag.canUpsert);
-  if (tagsAreNotOverwrittable.length) {
-    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwrittable.join(", ")}]`);
-  }
-  const tagsAreNotPublished = targetTags.filter((tag) => !tag.isPublished);
-  if (tagsAreNotPublished.length) {
-    failureMessages.push(`Unable to update pre-released tags [${tagsAreNotPublished.join(", ")}]`);
-  }
-  if (failureMessages.length) {
-    failureMessages.forEach((error) => core2.setFailed(error));
-    return;
-  }
-  targetTags.forEach((tag) => createTag(tag));
-  core2.info(`Tags [${targetTags.join(", ")}] now point to ${sourceTagInput || sha}`);
+      if (yield tagHasRelease(octokit, tag.value))
+        tag.foundRelease();
+    }
+    const failureMessages = [];
+    const tagsAreNotOverwritable = targetTags.filter((tag) => !tag.upsertable);
+    if (tagsAreNotOverwritable.length) {
+      failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(", ")}]`);
+    }
+    const tagsWithRelease = targetTags.filter((tag) => tag.hasRelease);
+    if (tagsWithRelease.length) {
+      failureMessages.push(
+        `Unable to update tags with an associated release [${tagsWithRelease.join(
+          ", "
+        )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+      );
+    }
+    if (failureMessages.length) {
+      failureMessages.forEach((error) => core.setFailed(error));
+      return;
+    }
+    for (const tag of targetTags) {
+      yield createTag(octokit, tag, sha);
+    }
+    const tagsCreated = targetTags.filter((tag) => !tag.exists);
+    if (tagsCreated.length)
+      console.info(`Tags [${tagsCreated.join(", ")}] created.`);
+    const tagsUpdated = targetTags.filter((tag) => tag.exists);
+    if (tagsUpdated.length)
+      console.info(`Tags [${tagsUpdated.join(", ")}] updated.`);
+    core.info(
+      `Tag${targetTags.length > 1 ? "s" : ""} now point${targetTags.length ? "s" : ""} to ${sourceTagInput || sha}!`
+    );
+    core.setOutput("tags", targetTags.join(","));
+  });
 }
 run().catch((error) => {
-  core2.setFailed(error.message);
+  core.setFailed(error.message);
   throw error;
 });
 /*! Bundled license information:
