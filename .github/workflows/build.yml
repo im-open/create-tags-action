@@ -12,8 +12,6 @@ on:
   # check that our Branch Protection Rules can use.  Having a status check also allows us
   # to require that branches be up to date before they are merged.
 
-  workflow_call:
-
 jobs:
   build:
     runs-on: ubuntu-latest
