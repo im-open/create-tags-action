@@ -8309,9 +8309,13 @@ function createTag(octokit, tag, sha) {
 
 // src/TargetTag.ts
 var import_parse4 = __toESM(require_parse());
-var _exists, _hasRelease;
+var _canReferenceReleaseIfExists, _exists, _hasRelease;
 var _TargetTag = class {
-  constructor(value, { canOverwrite = false } = { canOverwrite: false }) {
+  constructor(value, { canOverwrite = false, canReferenceRelease = false } = {
+    canOverwrite: false,
+    canReferenceRelease: false
+  }) {
+    __privateAdd(this, _canReferenceReleaseIfExists, void 0);
     __privateAdd(this, _exists, void 0);
     __privateAdd(this, _hasRelease, void 0);
     if (!(value == null ? void 0 : value.trim()))
@@ -8319,6 +8323,7 @@ var _TargetTag = class {
     this.value = value;
     this.isVersion = false;
     this.isOverwritableIfExists = canOverwrite;
+    __privateSet(this, _canReferenceReleaseIfExists, canReferenceRelease);
     __privateSet(this, _exists, false);
     __privateSet(this, _hasRelease, false);
   }
@@ -8329,10 +8334,13 @@ var _TargetTag = class {
     __privateSet(this, _exists, true);
   }
   get upsertable() {
-    return this.isOverwritableIfExists || !this.exists;
+    return !__privateGet(this, _exists) || this.isOverwritableIfExists;
   }
   get hasRelease() {
     return __privateGet(this, _hasRelease);
+  }
+  get canReferenceReleaseIfExists() {
+    return !__privateGet(this, _hasRelease) || __privateGet(this, _canReferenceReleaseIfExists);
   }
   foundRelease() {
     __privateSet(this, _hasRelease, true);
@@ -8345,6 +8353,7 @@ var _TargetTag = class {
   }
 };
 var TargetTag = _TargetTag;
+_canReferenceReleaseIfExists = new WeakMap();
 _exists = new WeakMap();
 _hasRelease = new WeakMap();
 var _semver;
@@ -8376,6 +8385,7 @@ var includeLatestTag = core.getBooleanInput("include-latest");
 var forceMainTargetTagCreation = core.getBooleanInput("force-target");
 var forceAdditioanlTargetTagsCreation = core.getBooleanInput("force-additional-targets");
 var failOnInvalidVersion = core.getBooleanInput("fail-on-invalid-version");
+var targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput("fail-on-associated-release");
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError("A source-tag, target-tag or additional-target-tags must be provided");
@@ -8387,23 +8397,35 @@ function validateInputs() {
 function provisionTargetTags() {
   const targetTags = [];
   if (targetTagInput) {
-    targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
+    targetTags.push(
+      TargetTag.for(targetTagInput, {
+        canOverwrite: forceMainTargetTagCreation,
+        canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+      })
+    );
   }
   const referenceTag = targetTagInput || sourceTagInput;
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
+    targetTags.push(TargetTag.for(majorTag, { canOverwrite: true, canReferenceRelease: true }));
     core.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
-    targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
+    targetTags.push(
+      TargetTag.for(majorMinorTag, { canOverwrite: true, canReferenceRelease: true })
+    );
     core.setOutput("major-minor-tag", majorMinorTag);
   }
   if (includeLatestTag && referenceTag) {
-    targetTags.push(TargetTag.for("latest", { canOverwrite: true }));
+    targetTags.push(TargetTag.for("latest", { canOverwrite: true, canReferenceRelease: true }));
   }
-  const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map((tag) => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+  const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map(
+    (tag) => TargetTag.for(tag, {
+      canOverwrite: forceAdditioanlTargetTagsCreation,
+      canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+    })
+  );
   return targetTags.concat(additionalTargetTags).sort();
 }
 function resolveSha(octokit) {
@@ -8452,14 +8474,18 @@ function run() {
     const failureMessages = [];
     const tagsAreNotOverwritable = targetTags.filter((tag) => !tag.upsertable);
     if (tagsAreNotOverwritable.length) {
-      failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(", ")}]`);
+      failureMessages.push(
+        `Unable to update existing tags [${tagsAreNotOverwritable.join(
+          ", "
+        )}]. You may force the update using the 'force-target' or 'force-additional-targets' flags.`
+      );
     }
-    const tagsWithRelease = targetTags.filter((tag) => tag.hasRelease);
+    const tagsWithRelease = targetTags.filter((tag) => !tag.canReferenceReleaseIfExists);
     if (tagsWithRelease.length) {
       failureMessages.push(
         `Unable to update tags with an associated release [${tagsWithRelease.join(
           ", "
-        )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+        )}]. You may force the update using the 'targets-can-reference-release' or 'force-additional-targets' flags.`
       );
     }
     if (failureMessages.length) {
