@@ -38,7 +38,7 @@ inputs:
 
   include-latest:
     description: Create a tag named 'latest'
-    default: 'true'
+    default: 'false'
     required: false
 
   force-target:
