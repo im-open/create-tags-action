@@ -39,7 +39,7 @@ To generate a major release like `v1`, use instead [im-open/create-release](http
 | `force-target`               | false       | `false` | Overwrite the `target-tag` if it already exists                                                                                                                             |
 | `force-additional-targets`   | false       | `true`  | Overwrite the target tags in the `additional-taget-tags` input if it already exists                                                                                         |
 | `fail-on-invalid-version`    | false       | `true`  | Forces semver validation check on the `source-tag` and `target-tag`                                                                                                         |
-| `fail-on-associated-release` | false       | `true`  | Do not allow a target tag to reference a release                                                                                                                            |
+| `fail-on-associated-release` | false       | `true`  | Do not allow a target tags to reference a release                                                                                                                           |
 
 > Additional inputs can be found on the [action definition](https://github.com/im-enrollment/create-tags-action/blob/main/action.yml)
 

@@ -10,8 +10,9 @@ interface TargetTagOptions {
 export default class TargetTag {
   readonly value: string;
   readonly isOverwritableIfExists: boolean;
-  readonly #canReferenceReleaseIfExists: boolean;
   protected isVersion: boolean;
+
+  readonly #canReferenceReleaseIfExists: boolean;
   #exists: boolean;
   #hasRelease: boolean;
 

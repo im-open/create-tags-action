@@ -23,7 +23,13 @@ const forceMainTargetTagCreation = core.getBooleanInput('force-target');
 const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional-targets');
 
 const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
-const targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput('fail-on-associated-release');
+
+let targetTagsCanReferenceAnExistingRelease = false;
+let specialTargetTagsCanReferenceAnExistingRelease = true;
+if (core.getInput('fail-on-associated-release')) {
+  targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput('fail-on-associated-release');
+  specialTargetTagsCanReferenceAnExistingRelease = targetTagsCanReferenceAnExistingRelease;
+}
 
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
@@ -50,7 +56,12 @@ function provisionTargetTags() {
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
 
-    targetTags.push(TargetTag.for(majorTag, { canOverwrite: true, canReferenceRelease: true }));
+    targetTags.push(
+      TargetTag.for(majorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
     core.setOutput('major-tag', majorTag);
   }
 
@@ -58,13 +69,21 @@ function provisionTargetTags() {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
     targetTags.push(
-      TargetTag.for(majorMinorTag, { canOverwrite: true, canReferenceRelease: true })
+      TargetTag.for(majorMinorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
     );
     core.setOutput('major-minor-tag', majorMinorTag);
   }
 
   if (includeLatestTag && referenceTag) {
-    targetTags.push(TargetTag.for('latest', { canOverwrite: true, canReferenceRelease: true }));
+    targetTags.push(
+      TargetTag.for('latest', {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
   }
 
   const additionalTargetTags = additionalTargetTagInputs
@@ -148,7 +167,7 @@ async function run() {
     failureMessages.push(
       `Unable to update tags with an associated release [${tagsWithRelease.join(
         ', '
-      )}]. You may force the update using the 'targets-can-reference-release' or 'force-additional-targets' flags.`
+      )}]. You may force the update using the 'fail-on-associated-release' flag.`
     );
   }
 

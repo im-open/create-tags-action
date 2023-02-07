@@ -69,6 +69,8 @@ jobs:
             await deleteTag('1');
             await deleteTag('1.2');
             await deleteTag('1.2.3');
+            await deleteTag('1.2.4');
+            await deleteTag('1.2.5');
             await deleteTag('test-latest');
             await deleteTag('test-ephemeral');
 
@@ -294,6 +296,56 @@ jobs:
             await deleteTag('1');
             await deleteTag('1.2.3');
 
+      # Fail on Major Tag creation associated with release
+      # ----------------
+
+      - name: Should fail on Release Major - Arrange
+        uses: im-open/create-release@v3.1.2
+        id: create-failed-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tag-name: 1
+          commitish: ${{ steps.create-tags.outputs.sha }}
+          prerelease: false
+
+      - name: Should fail on Release - Act
+        continue-on-error: true
+        id: fail-release
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ steps.create-tags.outputs.sha }}
+          source-tag: 1.2.4
+          include-latest: false
+          fail-on-associated-release: true
+
+      - name: Should fail on Release Major - Assert
+        if: steps.fail-release.outcome != 'failure'
+        run: exit 1
+
+      - name: Should fail on Release Major - Post Cleanup
+        uses: actions/github-script@v6
+        if: ${{ always() && steps.create-failed-release.outcome == 'success' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deleteTag = async tag => {
+              try {
+                await github.rest.git.deleteRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+              }
+              catch(e) { }
+            };
+
+            await github.rest.repos.deleteRelease({
+              ...context.repo,
+              release_id: '${{ steps.create-failed-release.outputs.release-id }}'
+            });
+
+            await deleteTag('1');
+
       # Fail on Pre-release
       # ----------------
 
@@ -302,7 +354,7 @@ jobs:
         id: create-pre-release
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          tag-name: 1.2.4
+          tag-name: 1.2.5
           commitish: ${{ steps.create-tags.outputs.sha }}
           prerelease: true
 
@@ -313,16 +365,38 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.create-tags.outputs.sha }}
-          source-tag: 1.2.4
+          source-tag: 1.2.5
           include-latest: false
 
       - name: Should fail on Pre-release - Assert
         if: steps.fail-prerelease.outcome != 'failure'
         run: exit 1
 
+      - name: Should fail on Pre-release - Assert Tag existence
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const getTagSha = async tag => {
+              try {
+                const { data } = await github.rest.git.getRef({
+                  ...context.repo,
+                  ref: `tags/${tag}`
+                });
+                return data.object.sha;
+              }
+              catch (e) {
+                if (e.status === 404) return null;
+                throw new Error(`Retrieving refs failed with the following error: ${e}`)
+              }
+            };
+
+            const majorTagSha = await getTagSha('1');
+            if (majorTagSha) core.setFailed(`tags 1 should not have been created`);
+
       - name: Should fail on Pre-release - Post Cleanup
         uses: actions/github-script@v6
-        if: always()
+        if: ${{ always() && steps.create-pre-release.outcome == 'success' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -341,5 +415,4 @@ jobs:
               release_id: '${{ steps.create-pre-release.outputs.release-id }}'
             });
 
-            await deleteTag('1');
-            await deleteTag('1.2.4');
+            await deleteTag('1.2.5');

@@ -8385,7 +8385,12 @@ var includeLatestTag = core.getBooleanInput("include-latest");
 var forceMainTargetTagCreation = core.getBooleanInput("force-target");
 var forceAdditioanlTargetTagsCreation = core.getBooleanInput("force-additional-targets");
 var failOnInvalidVersion = core.getBooleanInput("fail-on-invalid-version");
-var targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput("fail-on-associated-release");
+var targetTagsCanReferenceAnExistingRelease = false;
+var specialTargetTagsCanReferenceAnExistingRelease = true;
+if (core.getInput("fail-on-associated-release")) {
+  targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput("fail-on-associated-release");
+  specialTargetTagsCanReferenceAnExistingRelease = targetTagsCanReferenceAnExistingRelease;
+}
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError("A source-tag, target-tag or additional-target-tags must be provided");
@@ -8407,18 +8412,31 @@ function provisionTargetTags() {
   const referenceTag = targetTagInput || sourceTagInput;
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
-    targetTags.push(TargetTag.for(majorTag, { canOverwrite: true, canReferenceRelease: true }));
+    targetTags.push(
+      TargetTag.for(majorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
     core.setOutput("major-tag", majorTag);
   }
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
     targetTags.push(
-      TargetTag.for(majorMinorTag, { canOverwrite: true, canReferenceRelease: true })
+      TargetTag.for(majorMinorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
     );
     core.setOutput("major-minor-tag", majorMinorTag);
   }
   if (includeLatestTag && referenceTag) {
-    targetTags.push(TargetTag.for("latest", { canOverwrite: true, canReferenceRelease: true }));
+    targetTags.push(
+      TargetTag.for("latest", {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
   }
   const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map(
     (tag) => TargetTag.for(tag, {
@@ -8485,7 +8503,7 @@ function run() {
       failureMessages.push(
         `Unable to update tags with an associated release [${tagsWithRelease.join(
           ", "
-        )}]. You may force the update using the 'targets-can-reference-release' or 'force-additional-targets' flags.`
+        )}]. You may force the update using the 'fail-on-associated-release' flag.`
       );
     }
     if (failureMessages.length) {
