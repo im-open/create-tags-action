@@ -44,6 +44,25 @@ it('Cannot upsert when not overwritable but found', () => {
   expect(tag.upsertable).toBeFalsy();
 });
 
+it('Can reference release when not not found', () => {
+  const tag = TargetTag.for('v1.2.3', { canOverwrite: false, canReferenceRelease: false });
+  expect(tag.canReferenceReleaseIfExists).toBeTruthy();
+});
+
+it('Can reference release when found', () => {
+  const tag = TargetTag.for('v1.2.3', { canOverwrite: false, canReferenceRelease: true });
+  tag.found();
+  tag.foundRelease();
+  expect(tag.canReferenceReleaseIfExists).toBeTruthy();
+});
+
+it('Cannot reference release when found', () => {
+  const tag = TargetTag.for('v1.2.3', { canReferenceRelease: false });
+  tag.found();
+  tag.foundRelease();
+  expect(tag.canReferenceReleaseIfExists).toBeFalsy();
+});
+
 it('Should convert to tag name on toString', () => {
   const tag = TargetTag.for('v1.2.3');
   expect(tag.toString()).toBe('v1.2.3');

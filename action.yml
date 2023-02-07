@@ -56,6 +56,10 @@ inputs:
     default: 'true'
     required: false
 
+  fail-on-associated-release:
+    description: Do not allow a target tags to reference a release
+    required: false
+
 runs:
   using: 'node16'
   main: 'dist/index.js'

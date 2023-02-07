@@ -3,22 +3,32 @@ import SemVer from 'semver/classes/semver';
 import { isSemver, isStableSemverVersion } from './version-utils';
 
 interface TargetTagOptions {
-  canOverwrite: boolean;
+  canOverwrite?: boolean;
+  canReferenceRelease?: boolean;
 }
 
 export default class TargetTag {
   readonly value: string;
   readonly isOverwritableIfExists: boolean;
   protected isVersion: boolean;
+
+  readonly #canReferenceReleaseIfExists: boolean;
   #exists: boolean;
   #hasRelease: boolean;
 
-  constructor(value: string, { canOverwrite = false }: TargetTagOptions = { canOverwrite: false }) {
+  constructor(
+    value: string,
+    { canOverwrite = false, canReferenceRelease = false }: TargetTagOptions = {
+      canOverwrite: false,
+      canReferenceRelease: false
+    }
+  ) {
     if (!value?.trim()) throw new TypeError('value cannot be empty');
 
     this.value = value;
     this.isVersion = false;
     this.isOverwritableIfExists = canOverwrite;
+    this.#canReferenceReleaseIfExists = canReferenceRelease;
     this.#exists = false;
     this.#hasRelease = false;
   }
@@ -32,11 +42,15 @@ export default class TargetTag {
   }
 
   get upsertable() {
-    return this.isOverwritableIfExists || !this.exists;
+    return !this.#exists || this.isOverwritableIfExists;
   }
 
   get hasRelease() {
     return this.#hasRelease;
+  }
+
+  get canReferenceReleaseIfExists() {
+    return !this.#hasRelease || this.#canReferenceReleaseIfExists;
   }
 
   foundRelease() {

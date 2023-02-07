@@ -24,6 +24,13 @@ const forceAdditioanlTargetTagsCreation = core.getBooleanInput('force-additional
 
 const failOnInvalidVersion = core.getBooleanInput('fail-on-invalid-version');
 
+let targetTagsCanReferenceAnExistingRelease = false;
+let specialTargetTagsCanReferenceAnExistingRelease = true;
+if (core.getInput('fail-on-associated-release')) {
+  targetTagsCanReferenceAnExistingRelease = !core.getBooleanInput('fail-on-associated-release');
+  specialTargetTagsCanReferenceAnExistingRelease = targetTagsCanReferenceAnExistingRelease;
+}
+
 function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
@@ -36,7 +43,12 @@ function provisionTargetTags() {
   const targetTags = [];
 
   if (targetTagInput) {
-    targetTags.push(TargetTag.for(targetTagInput, { canOverwrite: forceMainTargetTagCreation }));
+    targetTags.push(
+      TargetTag.for(targetTagInput, {
+        canOverwrite: forceMainTargetTagCreation,
+        canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+      })
+    );
   }
 
   const referenceTag = targetTagInput || sourceTagInput;
@@ -44,24 +56,44 @@ function provisionTargetTags() {
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajorTag(referenceTag);
 
-    targetTags.push(TargetTag.for(majorTag, { canOverwrite: true }));
+    targetTags.push(
+      TargetTag.for(majorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
     core.setOutput('major-tag', majorTag);
   }
 
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinorTag(referenceTag);
 
-    targetTags.push(TargetTag.for(majorMinorTag, { canOverwrite: true }));
+    targetTags.push(
+      TargetTag.for(majorMinorTag, {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
     core.setOutput('major-minor-tag', majorMinorTag);
   }
 
   if (includeLatestTag && referenceTag) {
-    targetTags.push(TargetTag.for('latest', { canOverwrite: true }));
+    targetTags.push(
+      TargetTag.for('latest', {
+        canOverwrite: true,
+        canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
+      })
+    );
   }
 
   const additionalTargetTags = additionalTargetTagInputs
     .filter(tag => tag)
-    .map(tag => TargetTag.for(tag, { canOverwrite: forceAdditioanlTargetTagsCreation }));
+    .map(tag =>
+      TargetTag.for(tag, {
+        canOverwrite: forceAdditioanlTargetTagsCreation,
+        canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+      })
+    );
 
   return targetTags.concat(additionalTargetTags).sort();
 }
@@ -123,15 +155,19 @@ async function run() {
 
   const tagsAreNotOverwritable = targetTags.filter(tag => !tag.upsertable);
   if (tagsAreNotOverwritable.length) {
-    failureMessages.push(`Unable to update existing tags [${tagsAreNotOverwritable.join(', ')}]`);
+    failureMessages.push(
+      `Unable to update existing tags [${tagsAreNotOverwritable.join(
+        ', '
+      )}]. You may force the update using the 'force-target' or 'force-additional-targets' flags.`
+    );
   }
 
-  const tagsWithRelease = targetTags.filter(tag => tag.hasRelease);
+  const tagsWithRelease = targetTags.filter(tag => !tag.canReferenceReleaseIfExists);
   if (tagsWithRelease.length) {
     failureMessages.push(
       `Unable to update tags with an associated release [${tagsWithRelease.join(
         ', '
-      )}]. Instead, create the release using the https://github.com/im-open/create-release.`
+      )}]. You may force the update using the 'fail-on-associated-release' flag.`
     );
   }
 
