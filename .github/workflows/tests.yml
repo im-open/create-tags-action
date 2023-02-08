@@ -9,7 +9,6 @@ on:
       - 'package.json'
 
   workflow_dispatch:
-  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}
