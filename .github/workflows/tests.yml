@@ -3,8 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/tests.yml'
-      - 'dist/**'
-      - '/src/**.test.ts'
+      - '/src/**'
       - 'action.yml'
       - 'package-lock.json'
       - 'package.json'
@@ -13,9 +12,7 @@ on:
   workflow_call:
 
 concurrency:
-  # https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}
 
 jobs:
   units:
@@ -397,22 +394,16 @@ jobs:
       - name: Should fail on Pre-release - Post Cleanup
         uses: actions/github-script@v6
         if: ${{ always() && steps.create-pre-release.outcome == 'success' }}
+        continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const deleteTag = async tag => {
-              try {
-                await github.rest.git.deleteRef({
-                  ...context.repo,
-                  ref: `tags/${tag}`
-                });
-              }
-              catch(e) { }
-            };
-
             await github.rest.repos.deleteRelease({
               ...context.repo,
               release_id: '${{ steps.create-pre-release.outputs.release-id }}'
             });
 
-            await deleteTag('1.2.5');
+            await github.rest.git.deleteRef({
+              ...context.repo,
+              ref: 'tags/1.2.5'
+            });
