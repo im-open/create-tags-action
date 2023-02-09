@@ -9,8 +9,8 @@
     "build": "tsc && esbuild ./src --outfile=dist/index.js --bundle --platform=node --sourcemap",
     "test": "jest .",
     "test:watch": "jest . --watch",
-    "format": "prettier --write **/*.js",
-    "format-check": "prettier --check **/*.js",
+    "format": "prettier --write **/*.ts",
+    "format-check": "prettier --check **/*.ts",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "all": "npm run lint:fix && npm run format && npm run build"
