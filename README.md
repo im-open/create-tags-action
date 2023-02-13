@@ -1,4 +1,4 @@
-[![CI - Increment Version on Merge](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml)
+[![🛠️ Increment Version on Merge](https://github.com/im-open/create-tags-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-open/create-tags-action/actions/workflows/increment-version-on-merge.yml)
 
 # Create Multiple Tags Action
 
