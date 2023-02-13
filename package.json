@@ -6,14 +6,15 @@
   "scripts": {
     "prepare": "husky install",
     "start": "npm install && npm run build",
-    "build": "tsc && esbuild ./src --outfile=dist/index.js --bundle --platform=node --sourcemap",
+    "build": "esbuild ./src --outfile=dist/index.js --bundle --platform=node --sourcemap",
     "test": "jest .",
     "test:watch": "jest . --watch",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
+    "check-types": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "all": "npm run lint:fix && npm run format && npm run build"
+    "all": "npm run check-types && npm run lint:fix && npm run format && npm run build"
   },
   "keywords": [
     "GitHub",
@@ -58,6 +59,7 @@
     "jest": "^29.4",
     "lint-staged": "^13.1",
     "prettier": "^2.8",
+    "typescript": "^4.9.5",
     "yaml-lint": "^1.7"
   }
 }
