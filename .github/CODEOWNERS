@@ -1,3 +1,3 @@
-* @im-enrollment/ifp-admin
-/.github/CODEOWNERS @im-enrollment/ifp-admin
-/.husky @im-enrollment/ifp-admin
+* @im-open/infra-purple @bradyclifford
+/.github/CODEOWNERS @im-open/infra-purple
+/.husky@im-open/infra-purple @bradyclifford
