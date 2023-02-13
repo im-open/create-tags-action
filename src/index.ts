@@ -150,7 +150,7 @@ async function run() {
     if (await tagHasRelease(octokit, tag.value)) tag.foundRelease();
   }
 
-  // Tally up all failures instead of existing on first failure
+  // Tally up all failures instead of exiting on first failure
   const failureMessages = [];
 
   const tagsAreNotOverwritable = targetTags.filter(tag => !tag.upsertable);
