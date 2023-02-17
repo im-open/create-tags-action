@@ -37,7 +37,7 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, [self-hosted, ubuntu-20.04]]
+        operating-system: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.operating-system }}
 
     steps:
