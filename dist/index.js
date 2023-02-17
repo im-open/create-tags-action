@@ -8503,7 +8503,7 @@ function run() {
       failureMessages.push(
         `Unable to update tags with an associated release [${tagsWithRelease.join(
           ", "
-        )}]. You may force the update using the 'fail-on-associated-release' flag.`
+        )}]. You may force the update setting the 'fail-on-associated-release' flag to false.`
       );
     }
     if (failureMessages.length) {
