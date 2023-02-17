@@ -7939,10 +7939,10 @@ var require_semver = __commonJS({
     var { re, t } = require_re();
     var parseOptions = require_parse_options();
     var { compareIdentifiers } = require_identifiers();
-    var SemVer2 = class {
+    var SemVer = class {
       constructor(version2, options) {
         options = parseOptions(options);
-        if (version2 instanceof SemVer2) {
+        if (version2 instanceof SemVer) {
           if (version2.loose === !!options.loose && version2.includePrerelease === !!options.includePrerelease) {
             return version2;
           } else {
@@ -8005,11 +8005,11 @@ var require_semver = __commonJS({
       }
       compare(other) {
         debug("SemVer.compare", this.version, this.options, other);
-        if (!(other instanceof SemVer2)) {
+        if (!(other instanceof SemVer)) {
           if (typeof other === "string" && other === this.version) {
             return 0;
           }
-          other = new SemVer2(other, this.options);
+          other = new SemVer(other, this.options);
         }
         if (other.version === this.version) {
           return 0;
@@ -8017,14 +8017,14 @@ var require_semver = __commonJS({
         return this.compareMain(other) || this.comparePre(other);
       }
       compareMain(other) {
-        if (!(other instanceof SemVer2)) {
-          other = new SemVer2(other, this.options);
+        if (!(other instanceof SemVer)) {
+          other = new SemVer(other, this.options);
         }
         return compareIdentifiers(this.major, other.major) || compareIdentifiers(this.minor, other.minor) || compareIdentifiers(this.patch, other.patch);
       }
       comparePre(other) {
-        if (!(other instanceof SemVer2)) {
-          other = new SemVer2(other, this.options);
+        if (!(other instanceof SemVer)) {
+          other = new SemVer(other, this.options);
         }
         if (this.prerelease.length && !other.prerelease.length) {
           return -1;
@@ -8052,8 +8052,8 @@ var require_semver = __commonJS({
         } while (++i);
       }
       compareBuild(other) {
-        if (!(other instanceof SemVer2)) {
-          other = new SemVer2(other, this.options);
+        if (!(other instanceof SemVer)) {
+          other = new SemVer(other, this.options);
         }
         let i = 0;
         do {
@@ -8155,7 +8155,7 @@ var require_semver = __commonJS({
         return this;
       }
     };
-    module2.exports = SemVer2;
+    module2.exports = SemVer;
   }
 });
 
@@ -8164,11 +8164,11 @@ var require_parse = __commonJS({
   "node_modules/semver/functions/parse.js"(exports, module2) {
     var { MAX_LENGTH } = require_constants();
     var { re, t } = require_re();
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var parseOptions = require_parse_options();
     var parse2 = (version2, options) => {
       options = parseOptions(options);
-      if (version2 instanceof SemVer2) {
+      if (version2 instanceof SemVer) {
         return version2;
       }
       if (typeof version2 !== "string") {
@@ -8182,7 +8182,7 @@ var require_parse = __commonJS({
         return null;
       }
       try {
-        return new SemVer2(version2, options);
+        return new SemVer(version2, options);
       } catch (er) {
         return null;
       }
@@ -8218,15 +8218,15 @@ var require_clean = __commonJS({
 // node_modules/semver/functions/inc.js
 var require_inc = __commonJS({
   "node_modules/semver/functions/inc.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var inc = (version2, release, options, identifier) => {
       if (typeof options === "string") {
         identifier = options;
         options = void 0;
       }
       try {
-        return new SemVer2(
-          version2 instanceof SemVer2 ? version2.version : version2,
+        return new SemVer(
+          version2 instanceof SemVer ? version2.version : version2,
           options
         ).inc(release, identifier).version;
       } catch (er) {
@@ -8240,8 +8240,8 @@ var require_inc = __commonJS({
 // node_modules/semver/functions/compare.js
 var require_compare = __commonJS({
   "node_modules/semver/functions/compare.js"(exports, module2) {
-    var SemVer2 = require_semver();
-    var compare = (a, b, loose) => new SemVer2(a, loose).compare(new SemVer2(b, loose));
+    var SemVer = require_semver();
+    var compare = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
     module2.exports = compare;
   }
 });
@@ -8286,8 +8286,8 @@ var require_diff = __commonJS({
 // node_modules/semver/functions/major.js
 var require_major = __commonJS({
   "node_modules/semver/functions/major.js"(exports, module2) {
-    var SemVer2 = require_semver();
-    var major = (a, loose) => new SemVer2(a, loose).major;
+    var SemVer = require_semver();
+    var major = (a, loose) => new SemVer(a, loose).major;
     module2.exports = major;
   }
 });
@@ -8295,8 +8295,8 @@ var require_major = __commonJS({
 // node_modules/semver/functions/minor.js
 var require_minor = __commonJS({
   "node_modules/semver/functions/minor.js"(exports, module2) {
-    var SemVer2 = require_semver();
-    var minor = (a, loose) => new SemVer2(a, loose).minor;
+    var SemVer = require_semver();
+    var minor = (a, loose) => new SemVer(a, loose).minor;
     module2.exports = minor;
   }
 });
@@ -8304,8 +8304,8 @@ var require_minor = __commonJS({
 // node_modules/semver/functions/patch.js
 var require_patch = __commonJS({
   "node_modules/semver/functions/patch.js"(exports, module2) {
-    var SemVer2 = require_semver();
-    var patch = (a, loose) => new SemVer2(a, loose).patch;
+    var SemVer = require_semver();
+    var patch = (a, loose) => new SemVer(a, loose).patch;
     module2.exports = patch;
   }
 });
@@ -8343,10 +8343,10 @@ var require_compare_loose = __commonJS({
 // node_modules/semver/functions/compare-build.js
 var require_compare_build = __commonJS({
   "node_modules/semver/functions/compare-build.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var compareBuild = (a, b, loose) => {
-      const versionA = new SemVer2(a, loose);
-      const versionB = new SemVer2(b, loose);
+      const versionA = new SemVer(a, loose);
+      const versionB = new SemVer(b, loose);
       return versionA.compare(versionB) || versionA.compareBuild(versionB);
     };
     module2.exports = compareBuild;
@@ -8468,11 +8468,11 @@ var require_cmp = __commonJS({
 // node_modules/semver/functions/coerce.js
 var require_coerce = __commonJS({
   "node_modules/semver/functions/coerce.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var parse2 = require_parse();
     var { re, t } = require_re();
     var coerce = (version2, options) => {
-      if (version2 instanceof SemVer2) {
+      if (version2 instanceof SemVer) {
         return version2;
       }
       if (typeof version2 === "number") {
@@ -9270,7 +9270,7 @@ var require_range = __commonJS({
         }
         if (typeof version2 === "string") {
           try {
-            version2 = new SemVer2(version2, this.options);
+            version2 = new SemVer(version2, this.options);
           } catch (er) {
             return false;
           }
@@ -9289,7 +9289,7 @@ var require_range = __commonJS({
     var parseOptions = require_parse_options();
     var Comparator = require_comparator();
     var debug = require_debug();
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var {
       re,
       t,
@@ -9558,7 +9558,7 @@ var require_comparator = __commonJS({
         if (!m[2]) {
           this.semver = ANY;
         } else {
-          this.semver = new SemVer2(m[2], this.options.loose);
+          this.semver = new SemVer(m[2], this.options.loose);
         }
       }
       toString() {
@@ -9571,7 +9571,7 @@ var require_comparator = __commonJS({
         }
         if (typeof version2 === "string") {
           try {
-            version2 = new SemVer2(version2, this.options);
+            version2 = new SemVer(version2, this.options);
           } catch (er) {
             return false;
           }
@@ -9613,7 +9613,7 @@ var require_comparator = __commonJS({
     var { re, t } = require_re();
     var cmp = require_cmp();
     var debug = require_debug();
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var Range = require_range();
   }
 });
@@ -9646,7 +9646,7 @@ var require_to_comparators = __commonJS({
 // node_modules/semver/ranges/max-satisfying.js
 var require_max_satisfying = __commonJS({
   "node_modules/semver/ranges/max-satisfying.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var Range = require_range();
     var maxSatisfying = (versions, range, options) => {
       let max = null;
@@ -9661,7 +9661,7 @@ var require_max_satisfying = __commonJS({
         if (rangeObj.test(v)) {
           if (!max || maxSV.compare(v) === -1) {
             max = v;
-            maxSV = new SemVer2(max, options);
+            maxSV = new SemVer(max, options);
           }
         }
       });
@@ -9674,7 +9674,7 @@ var require_max_satisfying = __commonJS({
 // node_modules/semver/ranges/min-satisfying.js
 var require_min_satisfying = __commonJS({
   "node_modules/semver/ranges/min-satisfying.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var Range = require_range();
     var minSatisfying = (versions, range, options) => {
       let min = null;
@@ -9689,7 +9689,7 @@ var require_min_satisfying = __commonJS({
         if (rangeObj.test(v)) {
           if (!min || minSV.compare(v) === 1) {
             min = v;
-            minSV = new SemVer2(min, options);
+            minSV = new SemVer(min, options);
           }
         }
       });
@@ -9702,16 +9702,16 @@ var require_min_satisfying = __commonJS({
 // node_modules/semver/ranges/min-version.js
 var require_min_version = __commonJS({
   "node_modules/semver/ranges/min-version.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var Range = require_range();
     var gt = require_gt();
     var minVersion = (range, loose) => {
       range = new Range(range, loose);
-      let minver = new SemVer2("0.0.0");
+      let minver = new SemVer("0.0.0");
       if (range.test(minver)) {
         return minver;
       }
-      minver = new SemVer2("0.0.0-0");
+      minver = new SemVer("0.0.0-0");
       if (range.test(minver)) {
         return minver;
       }
@@ -9720,7 +9720,7 @@ var require_min_version = __commonJS({
         const comparators = range.set[i];
         let setMin = null;
         comparators.forEach((comparator) => {
-          const compver = new SemVer2(comparator.semver.version);
+          const compver = new SemVer(comparator.semver.version);
           switch (comparator.operator) {
             case ">":
               if (compver.prerelease.length === 0) {
@@ -9773,7 +9773,7 @@ var require_valid2 = __commonJS({
 // node_modules/semver/ranges/outside.js
 var require_outside = __commonJS({
   "node_modules/semver/ranges/outside.js"(exports, module2) {
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var Comparator = require_comparator();
     var { ANY } = Comparator;
     var Range = require_range();
@@ -9783,7 +9783,7 @@ var require_outside = __commonJS({
     var lte = require_lte();
     var gte = require_gte();
     var outside = (version2, range, hilo, options) => {
-      version2 = new SemVer2(version2, options);
+      version2 = new SemVer(version2, options);
       range = new Range(range, options);
       let gtfn, ltefn, ltfn, comp, ecomp;
       switch (hilo) {
@@ -10083,7 +10083,7 @@ var require_semver2 = __commonJS({
   "node_modules/semver/index.js"(exports, module2) {
     var internalRe = require_re();
     var constants = require_constants();
-    var SemVer2 = require_semver();
+    var SemVer = require_semver();
     var identifiers = require_identifiers();
     var parse2 = require_parse();
     var valid = require_valid();
@@ -10160,7 +10160,7 @@ var require_semver2 = __commonJS({
       intersects,
       simplifyRange,
       subset,
-      SemVer: SemVer2,
+      SemVer,
       re: internalRe.re,
       src: internalRe.src,
       tokens: internalRe.t,
@@ -10177,12 +10177,22 @@ var github = __toESM(require_github());
 
 // src/version-utils.ts
 var import_semver = __toESM(require_semver2());
-var import_semver2 = __toESM(require_semver());
+function isStableSemver(value) {
+  var _a;
+  return ((_a = import_semver.default.parse(value)) == null ? void 0 : _a.prerelease.length) === 0;
+}
+function isValidAndStableSemver(value) {
+  const parsed = import_semver.default.parse(value);
+  if (!parsed)
+    return false;
+  return isStableSemver(value);
+}
+function isValidSemVer(value) {
+  return import_semver.default.valid(value) !== null;
+}
 function canCoerceAsSemver(value) {
   if (!value)
     return false;
-  if (value instanceof import_semver2.default)
-    return true;
   return import_semver.default.valid(import_semver.default.coerce(value)) !== null;
 }
 function getMajor(value) {
@@ -10194,19 +10204,6 @@ function getMajorAndMinor(value) {
   if (!isValidAndStableSemver(value))
     throw new TypeError(`Tag [${value}] doesn't satisfy semantic versioning specification`);
   return value.split(".").slice(0, 2).join(".");
-}
-function isStableSemver(value) {
-  var _a;
-  return ((_a = import_semver.default.parse(value)) == null ? void 0 : _a.prerelease.length) === 0;
-}
-function isValidSemVer(value) {
-  return import_semver.default.valid(value) !== null;
-}
-function isValidAndStableSemver(value) {
-  const semverVersion = import_semver.default.parse(value);
-  if (!semverVersion)
-    return false;
-  return isStableSemver(value);
 }
 
 // src/api-utils.ts
@@ -10329,7 +10326,7 @@ var _TargetTag = class {
     return this.value;
   }
   static for(target, options) {
-    return canCoerceAsSemver(target) ? new TargetVersionedTag(target, options) : new _TargetTag(target, options);
+    return isValidSemVer(target) ? new TargetVersionedTag(target, options) : new _TargetTag(target, options);
   }
 };
 var TargetTag = _TargetTag;
@@ -10339,10 +10336,10 @@ _hasRelease = new WeakMap();
 var TargetVersionedTag = class extends TargetTag {
   constructor(value, options) {
     super(value, options);
-    if (!canCoerceAsSemver(value))
+    if (!isValidSemVer(value))
       throw new TypeError(`value [${value}] must be a semver`);
   }
-  get isStableVersion() {
+  get isStable() {
     return isStableSemver(this.value);
   }
 };
@@ -10465,7 +10462,7 @@ function run() {
     core.setOutput("sha", sha);
     const targetTags = provisionTargetTags();
     const tagsAsVersionsNotStable = targetTags.filter(
-      (tag) => tag instanceof TargetVersionedTag && !tag.isStableVersion
+      (tag) => tag instanceof TargetVersionedTag && !tag.isStable
     );
     if (tagsAsVersionsNotStable.length) {
       core.setFailed(`Unstable versioned tags [${tagsAsVersionsNotStable.join(", ")}]`);

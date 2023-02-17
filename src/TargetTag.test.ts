@@ -1,4 +1,4 @@
-import TargetTag from './TargetTag';
+import TargetTag, { TargetVersionedTag } from './TargetTag';
 
 it('Should exist when found', () => {
   const tag = TargetTag.for('v1.2.3');
@@ -66,4 +66,20 @@ it('Cannot reference release when found', () => {
 it('Should convert to tag name on toString', () => {
   const tag = TargetTag.for('v1.2.3');
   expect(tag.toString()).toBe('v1.2.3');
+});
+
+it('Should be stable target tag with full semver', () => {
+  const tag = TargetTag.for('v1.2.3') as TargetVersionedTag;
+  expect(tag.isStable).toBe(true);
+});
+
+it('Should not be verioned target if only major value', () => {
+  const tag = TargetTag.for('v1');
+  expect(tag instanceof TargetVersionedTag).toBe(false);
+});
+
+it('Should not be stable target tag', () => {
+  const tag = TargetTag.for('v1.0.0-beta.1') as TargetVersionedTag;
+  expect(tag instanceof TargetVersionedTag).toBe(true);
+  expect(tag.isStable).toBe(false);
 });

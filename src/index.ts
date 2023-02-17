@@ -159,7 +159,7 @@ async function run() {
   const targetTags = provisionTargetTags();
 
   const tagsAsVersionsNotStable = targetTags.filter(
-    tag => tag instanceof TargetVersionedTag && !tag.isStableVersion
+    tag => tag instanceof TargetVersionedTag && !tag.isStable
   );
 
   if (tagsAsVersionsNotStable.length) {

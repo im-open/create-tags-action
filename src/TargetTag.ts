@@ -1,4 +1,4 @@
-import { canCoerceAsSemver, isStableSemver } from './version-utils';
+import { isValidSemVer, isStableSemver } from './version-utils';
 
 interface TargetTagOptions {
   canOverwrite?: boolean;
@@ -59,8 +59,8 @@ export default class TargetTag {
     return this.value;
   }
 
-  static for(target: string, options?: TargetTagOptions) {
-    return canCoerceAsSemver(target)
+  static for(target: string, options?: TargetTagOptions): TargetVersionedTag | TargetTag {
+    return isValidSemVer(target)
       ? new TargetVersionedTag(target, options)
       : new TargetTag(target, options);
   }
@@ -69,10 +69,10 @@ export default class TargetTag {
 export class TargetVersionedTag extends TargetTag {
   constructor(value: string, options?: TargetTagOptions | undefined) {
     super(value, options);
-    if (!canCoerceAsSemver(value)) throw new TypeError(`value [${value}] must be a semver`);
+    if (!isValidSemVer(value)) throw new TypeError(`value [${value}] must be a semver`);
   }
 
-  get isStableVersion() {
+  get isStable() {
     return isStableSemver(this.value);
   }
 }
