@@ -177,6 +177,13 @@ jobs:
             if (minorTagSha !== '${{ steps.create-tags.outputs.sha }}')
               core.setFailed(`minor tag is not correct [${{ steps.create-tags.outputs.sha }}]`);
 
+      - name: Should not fail on update tag major using target with only major - Act
+        uses: im-open/create-tags-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1
+          include-major: true
+
       - name: Should fail on bad version - Act
         continue-on-error: true
         id: fail-version

@@ -3,7 +3,13 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { GitHub } from '@actions/github/lib/utils';
 import { WebhookPlayloadExtended } from './types';
-import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
+import {
+  isValidSemVer,
+  getMajor,
+  getMajorAndMinor,
+  canCoerceAsSemver,
+  isStableSemver
+} from './version-utils';
 import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
 import TargetTag, { TargetVersionedTag } from './TargetTag';
 
@@ -35,8 +41,27 @@ function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
 
-  if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
-  if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
+  if (!failOnInvalidVersion) return;
+
+  if (targetTagInput && !canCoerceAsSemver(targetTagInput)) {
+    throw new Error(
+      `target-tag [${targetTagInput}] doesn't satisfy semantic versioning specification`
+    );
+  }
+
+  if (!sourceTagInput) return;
+
+  if (!isValidSemVer(sourceTagInput)) {
+    throw new Error(
+      `source-tag [${sourceTagInput}] doesn't satisfy semantic versioning specification`
+    );
+  }
+
+  if (!isStableSemver(sourceTagInput)) {
+    throw new Error(
+      `It is not allowed to specify pre-release version source-tag [${sourceTagInput}]`
+    );
+  }
 }
 
 function provisionTargetTags() {
@@ -54,7 +79,7 @@ function provisionTargetTags() {
   const referenceTag = targetTagInput || sourceTagInput;
 
   if (includeMajorTag && referenceTag) {
-    const majorTag = getMajorTag(referenceTag);
+    const majorTag = getMajor(referenceTag);
 
     targetTags.push(
       TargetTag.for(majorTag, {
@@ -66,7 +91,7 @@ function provisionTargetTags() {
   }
 
   if (includeMajorMinorTag && referenceTag) {
-    const majorMinorTag = getMajorAndMinorTag(referenceTag);
+    const majorMinorTag = getMajorAndMinor(referenceTag);
 
     targetTags.push(
       TargetTag.for(majorMinorTag, {

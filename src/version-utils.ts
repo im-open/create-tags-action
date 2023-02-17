@@ -1,33 +1,34 @@
-import semverParse from 'semver/functions/parse';
+import semver from 'semver';
 import SemVer from 'semver/classes/semver';
 
-export function isSemver(value: string | SemVer | null | undefined) {
+export function canCoerceAsSemver(value: string | SemVer | null | undefined) {
   if (!value) return false;
   if (value instanceof SemVer) return true;
-  return semverParse(value) ? true : false;
+  return semver.valid(semver.coerce(value)) !== null;
 }
 
-export function getMajorTag(tag: string) {
-  if (!isSemver) throw new TypeError(`Tag [${tag}] is not a semver`);
-  return tag.split('.')[0];
+export function getMajor(value: string) {
+  if (!isValidAndStableSemver(value))
+    throw new TypeError(`Tag [${value}] doesn't satisfy semantic versioning specification`);
+  return value.split('.')[0];
 }
 
-export function getMajorAndMinorTag(tag: string) {
-  if (!isSemver) throw new TypeError(`Tag [${tag}] is not a semver`);
-  return tag.split('.').slice(0, 2).join('.');
+export function getMajorAndMinor(value: string) {
+  if (!isValidAndStableSemver(value))
+    throw new TypeError(`Tag [${value}] doesn't satisfy semantic versioning specification`);
+  return value.split('.').slice(0, 2).join('.');
 }
 
-export function isStableSemverVersion(version: SemVer) {
-  return version.prerelease.length === 0;
+export function isStableSemver(value: string) {
+  return semver.parse(value)?.prerelease.length === 0 ?? false;
 }
 
-export function validateSemverVersionFromTag(tag: string): void {
-  const semverVersion = semverParse(tag);
-  if (!semverVersion) {
-    throw new Error(`Tag [${tag}] doesn't satisfy semantic versioning specification`);
-  }
+export function isValidSemVer(value: string) {
+  return semver.valid(value) !== null;
+}
 
-  if (!isStableSemverVersion(semverVersion)) {
-    throw new Error(`It is not allowed to specify pre-release version tag [${tag}]`);
-  }
+export function isValidAndStableSemver(value: string) {
+  const semverVersion = semver.parse(value);
+  if (!semverVersion) return false;
+  return isStableSemver(value);
 }
