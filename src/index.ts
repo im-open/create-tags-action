@@ -150,7 +150,7 @@ async function run() {
     if (await tagHasRelease(octokit, tag.value)) tag.foundRelease();
   }
 
-  // Tally up all failures instead of existing on first failure
+  // Tally up all failures instead of exiting on first failure
   const failureMessages = [];
 
   const tagsAreNotOverwritable = targetTags.filter(tag => !tag.upsertable);
@@ -167,7 +167,7 @@ async function run() {
     failureMessages.push(
       `Unable to update tags with an associated release [${tagsWithRelease.join(
         ', '
-      )}]. You may force the update using the 'fail-on-associated-release' flag.`
+      )}]. You may force the update setting the 'fail-on-associated-release' flag to false.`
     );
   }
 

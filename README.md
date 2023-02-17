@@ -1,15 +1,15 @@
-[![CI - Increment Version on Merge](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-enrollment/create-tags-action/actions/workflows/increment-version-on-merge.yml)
+[![🛠️ Increment Version on Merge](https://github.com/im-open/create-tags-action/actions/workflows/increment-version-on-merge.yml/badge.svg)](https://github.com/im-open/create-tags-action/actions/workflows/increment-version-on-merge.yml)
 
 # Create Multiple Tags Action
 
-Creates or updates tags. Easiy generate additional major `v1` and `latest` tags.
+Creates or updates tags. Easily generate additional major `v1` and `latest` tags.
 
 - The source tag cannot be associated with a pre-releases.
-- The target tags cannot be assigned to a release.
+- The target tags cannot be assigned to a release. Can be overrided.
 
 > Generally used in workflows that maintain GitHub Actions and Terraform Modules
 
-To generate a major release like `v1`, use instead [im-open/create-release](https://github.com/im-open/create-release).
+To generate a major release like `v1`, use instead [im-open/create-release](https://github.com/im-open/create-release) and .
 
 ## Index
 
@@ -41,7 +41,7 @@ To generate a major release like `v1`, use instead [im-open/create-release](http
 | `fail-on-invalid-version`    | false       | `true`  | Forces semver validation check on the `source-tag` and `target-tag`                                                                                                         |
 | `fail-on-associated-release` | false       | `true`  | Do not allow a target tags to reference a release                                                                                                                           |
 
-> Additional inputs can be found on the [action definition](https://github.com/im-enrollment/create-tags-action/blob/main/action.yml)
+> Additional inputs can be found on the [action definition](https://github.com/im-open/create-tags-action/blob/main/action.yml)
 
 ## Outputs
 
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create various tags from current context's SHA
-        uses: im-enrollment/create-tags-action@v1
+        uses: im-open/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target-tag: v1.2.3
@@ -96,7 +96,7 @@ jobs:
       # Generates a next version of v1.2.3
 
       - name: Create Major and Latest tags that reference the same SHA as the main tag
-        uses: im-enrollment/create-tags-action@v1
+        uses: im-open/create-tags-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
