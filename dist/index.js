@@ -10388,7 +10388,7 @@ function validateInputs() {
 }
 function provisionTargetTags() {
   const targetTags = new Map(
-    additionalTargetTagInputs.filter((value, index, self) => value !== void 0 && self.indexOf(value) === index).map((tag) => [
+    additionalTargetTagInputs.filter((value, index, self) => (value == null ? void 0 : value.trim()) !== "" && self.indexOf(value) === index).map((tag) => [
       tag,
       TargetTag.for(tag, {
         canOverwrite: forceAdditioanlTargetTagsCreation,
@@ -10437,10 +10437,6 @@ function provisionTargetTags() {
       })
     );
   }
-  console.log(
-    "sorted",
-    [...targetTags].sort(([a], [b]) => String(a).localeCompare(b)).map(([, targetTag]) => targetTag)
-  );
   return [...targetTags].sort(([a], [b]) => String(a).localeCompare(b)).map(([, targetTag]) => targetTag);
 }
 function resolveSha(octokit) {

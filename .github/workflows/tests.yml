@@ -197,7 +197,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target-tag: 1
-          include-minor: true
+          include-major-minor: true
 
       - name: Should fail on pre-release target - Act
         continue-on-error: true

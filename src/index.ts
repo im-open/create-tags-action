@@ -67,8 +67,8 @@ function validateInputs() {
 function provisionTargetTags() {
   const targetTags = new Map(
     additionalTargetTagInputs
-      // Remove duplicates
-      .filter((value, index, self) => value !== undefined && self.indexOf(value) === index)
+      // Remove duplicates and empty tag names
+      .filter((value, index, self) => value?.trim() !== '' && self.indexOf(value) === index)
       .map(tag => [
         tag,
         TargetTag.for(tag, {
@@ -125,11 +125,6 @@ function provisionTargetTags() {
       })
     );
   }
-
-  console.log(
-    'sorted',
-    [...targetTags].sort(([a], [b]) => String(a).localeCompare(b)).map(([, targetTag]) => targetTag)
-  );
 
   return [...targetTags]
     .sort(([a], [b]) => String(a).localeCompare(b))
