@@ -196,7 +196,7 @@ async function run() {
     failureMessages.push(
       `Unable to update existing tags [${tagsAreNotOverwritable.join(
         ', '
-      )}]. You may force the update using the 'force-target' or 'force-additional-targets' flags.`
+      )}]. You may force the update by using the 'force-target' or 'force-additional-targets' flags.`
     );
   }
 
@@ -205,7 +205,7 @@ async function run() {
     failureMessages.push(
       `Unable to update tags with an associated release [${tagsWithRelease.join(
         ', '
-      )}]. You may force the update setting the 'fail-on-associated-release' flag to false.`
+      )}]. You may force the update by setting the 'fail-on-associated-release' flag to false.`
     );
   }
 
