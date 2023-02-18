@@ -10387,19 +10387,29 @@ function validateInputs() {
   }
 }
 function provisionTargetTags() {
-  const targetTags = [];
+  const targetTags = new Map(
+    additionalTargetTagInputs.filter((value, index, self) => value !== void 0 && self.indexOf(value) === index).map((tag) => [
+      tag,
+      TargetTag.for(tag, {
+        canOverwrite: forceAdditioanlTargetTagsCreation,
+        canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+      })
+    ])
+  );
   if (targetTagInput) {
-    targetTags.push(
+    targetTags.set(
+      targetTagInput,
       TargetTag.for(targetTagInput, {
         canOverwrite: forceMainTargetTagCreation,
         canReferenceRelease: targetTagsCanReferenceAnExistingRelease
       })
     );
   }
-  const referenceTag = targetTagInput || sourceTagInput;
+  const referenceTag = sourceTagInput || targetTagInput;
   if (includeMajorTag && referenceTag) {
     const majorTag = getMajor(referenceTag);
-    targetTags.push(
+    targetTags.set(
+      majorTag,
       TargetTag.for(majorTag, {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
@@ -10409,7 +10419,8 @@ function provisionTargetTags() {
   }
   if (includeMajorMinorTag && referenceTag) {
     const majorMinorTag = getMajorAndMinor(referenceTag);
-    targetTags.push(
+    targetTags.set(
+      majorMinorTag,
       TargetTag.for(majorMinorTag, {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
@@ -10418,20 +10429,19 @@ function provisionTargetTags() {
     core.setOutput("major-minor-tag", majorMinorTag);
   }
   if (includeLatestTag && referenceTag) {
-    targetTags.push(
+    targetTags.set(
+      "latest",
       TargetTag.for("latest", {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
       })
     );
   }
-  const additionalTargetTags = additionalTargetTagInputs.filter((tag) => tag).map(
-    (tag) => TargetTag.for(tag, {
-      canOverwrite: forceAdditioanlTargetTagsCreation,
-      canReferenceRelease: targetTagsCanReferenceAnExistingRelease
-    })
+  console.log(
+    "sorted",
+    [...targetTags].sort(([a], [b]) => String(a).localeCompare(b)).map(([, targetTag]) => targetTag)
   );
-  return targetTags.concat(additionalTargetTags).sort();
+  return [...targetTags].sort(([a], [b]) => String(a).localeCompare(b)).map(([, targetTag]) => targetTag);
 }
 function resolveSha(octokit) {
   return __async(this, null, function* () {
