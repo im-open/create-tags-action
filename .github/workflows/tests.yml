@@ -126,7 +126,8 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          target-tag: 1.2.3
+          source-tag: 1.2.3
+          target-tag: 1 # Usually you would not duplicate what include-major is doing (will be filtered out)
           additional-target-tags: |
             test-latest
             test-ephemeral
@@ -177,7 +178,28 @@ jobs:
             if (minorTagSha !== '${{ steps.create-tags.outputs.sha }}')
               core.setFailed(`minor tag is not correct [${{ steps.create-tags.outputs.sha }}]`);
 
-      - name: Should fail on bad version - Act
+      # Should fail assertions
+      # ----------------
+
+      - name: Should fail on invalid target tag when creating major - Act
+        continue-on-error: true
+        id: fail-version-major
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1
+          include-major: true
+
+      - name: Should fail on invalid target tag when creating major + minor - Act
+        continue-on-error: true
+        id: fail-version-minor
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target-tag: 1
+          include-major-minor: true
+
+      - name: Should fail on pre-release target - Act
         continue-on-error: true
         id: fail-version
         uses: ./
@@ -197,6 +219,8 @@ jobs:
         if: >-
           ${{
             steps.fail-version.outcome != 'failure' ||
+            steps.fail-version-major.outcome != 'failure' ||
+            steps.fail-version-minor.outcome != 'failure' ||
             steps.fail-existing.outcome != 'failure'
           }}
         run: exit 1

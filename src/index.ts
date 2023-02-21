@@ -3,7 +3,13 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { GitHub } from '@actions/github/lib/utils';
 import { WebhookPlayloadExtended } from './types';
-import { validateSemverVersionFromTag, getMajorTag, getMajorAndMinorTag } from './version-utils';
+import {
+  isValidSemVer,
+  getMajor,
+  getMajorAndMinor,
+  canCoerceAsSemver,
+  isStableSemver
+} from './version-utils';
 import { tagExists, getShaFromTag, tagHasRelease, getRelease, createTag } from './api-utils';
 import TargetTag, { TargetVersionedTag } from './TargetTag';
 
@@ -35,15 +41,46 @@ function validateInputs() {
   if (!sourceTagInput && !targetTagInput && !additionalTargetTagInputs.length)
     throw new TypeError('A source-tag, target-tag or additional-target-tags must be provided');
 
-  if (failOnInvalidVersion && sourceTagInput) validateSemverVersionFromTag(sourceTagInput);
-  if (failOnInvalidVersion && targetTagInput) validateSemverVersionFromTag(targetTagInput);
+  if (!failOnInvalidVersion) return;
+
+  if (targetTagInput && !canCoerceAsSemver(targetTagInput)) {
+    throw new Error(
+      `target-tag [${targetTagInput}] doesn't satisfy semantic versioning specification`
+    );
+  }
+
+  if (!sourceTagInput) return;
+
+  if (!isValidSemVer(sourceTagInput)) {
+    throw new Error(
+      `source-tag [${sourceTagInput}] doesn't satisfy semantic versioning specification`
+    );
+  }
+
+  if (!isStableSemver(sourceTagInput)) {
+    throw new Error(
+      `It is not allowed to specify pre-release version source-tag [${sourceTagInput}]`
+    );
+  }
 }
 
 function provisionTargetTags() {
-  const targetTags = [];
+  const targetTags = new Map(
+    additionalTargetTagInputs
+      // Remove duplicates and empty tag names
+      .filter((value, index, self) => value?.trim() !== '' && self.indexOf(value) === index)
+      .map(tag => [
+        tag,
+        TargetTag.for(tag, {
+          canOverwrite: forceAdditioanlTargetTagsCreation,
+          canReferenceRelease: targetTagsCanReferenceAnExistingRelease
+        })
+      ])
+  );
 
   if (targetTagInput) {
-    targetTags.push(
+    targetTags.set(
+      targetTagInput,
       TargetTag.for(targetTagInput, {
         canOverwrite: forceMainTargetTagCreation,
         canReferenceRelease: targetTagsCanReferenceAnExistingRelease
@@ -51,12 +88,13 @@ function provisionTargetTags() {
     );
   }
 
-  const referenceTag = targetTagInput || sourceTagInput;
+  const referenceTag = sourceTagInput || targetTagInput;
 
   if (includeMajorTag && referenceTag) {
-    const majorTag = getMajorTag(referenceTag);
+    const majorTag = getMajor(referenceTag);
 
-    targetTags.push(
+    targetTags.set(
+      majorTag,
       TargetTag.for(majorTag, {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
@@ -66,9 +104,10 @@ function provisionTargetTags() {
   }
 
   if (includeMajorMinorTag && referenceTag) {
-    const majorMinorTag = getMajorAndMinorTag(referenceTag);
+    const majorMinorTag = getMajorAndMinor(referenceTag);
 
-    targetTags.push(
+    targetTags.set(
+      majorMinorTag,
       TargetTag.for(majorMinorTag, {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
@@ -78,7 +117,8 @@ function provisionTargetTags() {
   }
 
   if (includeLatestTag && referenceTag) {
-    targetTags.push(
+    targetTags.set(
+      'latest',
       TargetTag.for('latest', {
         canOverwrite: true,
         canReferenceRelease: specialTargetTagsCanReferenceAnExistingRelease
@@ -86,16 +126,9 @@ function provisionTargetTags() {
     );
   }
 
-  const additionalTargetTags = additionalTargetTagInputs
-    .filter(tag => tag)
-    .map(tag =>
-      TargetTag.for(tag, {
-        canOverwrite: forceAdditioanlTargetTagsCreation,
-        canReferenceRelease: targetTagsCanReferenceAnExistingRelease
-      })
-    );
-
-  return targetTags.concat(additionalTargetTags).sort();
+  return [...targetTags]
+    .sort(([a], [b]) => String(a).localeCompare(b))
+    .map(([, targetTag]) => targetTag);
 }
 
 async function resolveSha(octokit: InstanceType<typeof GitHub>) {
@@ -134,7 +167,7 @@ async function run() {
   const targetTags = provisionTargetTags();
 
   const tagsAsVersionsNotStable = targetTags.filter(
-    tag => tag instanceof TargetVersionedTag && !tag.isStableVersion
+    tag => tag instanceof TargetVersionedTag && !tag.isStable
   );
 
   if (tagsAsVersionsNotStable.length) {
@@ -158,7 +191,7 @@ async function run() {
     failureMessages.push(
       `Unable to update existing tags [${tagsAreNotOverwritable.join(
         ', '
-      )}]. You may force the update using the 'force-target' or 'force-additional-targets' flags.`
+      )}]. You may force the update by using the 'force-target' or 'force-additional-targets' flags.`
     );
   }
 
@@ -167,7 +200,7 @@ async function run() {
     failureMessages.push(
       `Unable to update tags with an associated release [${tagsWithRelease.join(
         ', '
-      )}]. You may force the update setting the 'fail-on-associated-release' flag to false.`
+      )}]. You may force the update by setting the 'fail-on-associated-release' flag to false.`
     );
   }
 
