@@ -40,7 +40,7 @@
     "semver": "^7.3.8"
   },
   "devDependencies": {
-    "@babel/core": "^7.20",
+    "@babel/core": "^7.21",
     "@babel/preset-env": "^7.20",
     "@babel/preset-typescript": "^7.18",
     "@octokit/types": "^9.0.0",
