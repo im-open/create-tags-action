@@ -42,7 +42,7 @@ jobs:
 
       - name: Check for code changes to the action
         id: action-code
-        uses: im-open/did-custom-action-code-change@v1.0.1
+        uses: im-open/did-custom-action-code-change@v1
         with:
           files-with-code: action.yml,package.json,package-lock.json
           folders-with-code: src,dist
@@ -51,13 +51,13 @@ jobs:
       - name: Get the next version for the readme if there are code changes to the action
         if: steps.action-code.outputs.HAS_CHANGES == 'true'
         id: version
-        uses: im-open/git-version-lite@v2.2.0
+        uses: im-open/git-version-lite@v2
         with:
           create-ref: false
           default-release-type: major
 
       - name: Comment on PR with release version ${{ steps.version.outputs.NEXT_VERSION }}
-        uses: im-open/update-pr-comment@v1.1.0
+        uses: im-open/update-pr-comment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-identifier: next-version
@@ -66,7 +66,7 @@ jobs:
 
       - name: Update readme with next version if there are code changes to the action
         if: steps.action-code.outputs.HAS_CHANGES == 'true'
-        uses: im-open/update-action-version-in-file@v1.0.0
+        uses: im-open/update-action-version-in-file@v1
         with:
           file-to-update: './README.md'
           action-name: ${{ github.repository }}
