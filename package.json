@@ -14,7 +14,7 @@
     "check-types": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "all": "npm run check-types && npm run lint:fix && npm run format && npm run build"
+    "all": "npm run check-types && npm run lint:fix -- --max-warnings=0 && npm run format && npm run build"
   },
   "keywords": [
     "GitHub",
