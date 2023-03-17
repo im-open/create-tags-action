@@ -51,8 +51,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           default-release-type: major
 
-      - name: Create Major Tag
-        uses: im-open/create-tags-action@v1
+      - name: Create version tag, create or update major, minor, and latest tags
+        uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
