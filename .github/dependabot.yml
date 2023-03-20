@@ -1,10 +1,22 @@
 version: 2
 updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      # Check for updates at 2am MST
+      time: '09:00'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-minor']
+
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'monthly'
       time: '09:00'
-    pull-request-branch-name:
-      separator: '-'
     registries: '*'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']

@@ -73,7 +73,7 @@ it('Should be stable target tag with full semver', () => {
   expect(tag.isStable).toBe(true);
 });
 
-it('Should not be verioned target if only major value', () => {
+it('Should not be versioned target if only major value', () => {
   const tag = TargetTag.for('v1');
   expect(tag instanceof TargetVersionedTag).toBe(false);
 });

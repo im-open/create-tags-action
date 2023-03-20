@@ -5,11 +5,10 @@
 Creates or updates tags. Easily generate additional major `v1` and `latest` tags.
 
 - The source tag cannot be associated with a pre-releases.
-- The target tags cannot be assigned to a release. Can be overrided.
+- The target tags cannot be assigned to a release. Howerver, this restriction can be overrided.
+- To generate a major release like `v1`, use instead [im-open/create-release](https://github.com/im-open/create-release).
 
 > Generally used in workflows that maintain GitHub Actions and Terraform Modules
-
-To generate a major release like `v1`, use instead [im-open/create-release](https://github.com/im-open/create-release) and .
 
 ## Index
 
