@@ -99,7 +99,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
-          source-target: ${{ steps.version.outputs.NEXT_VERSION }}
+          source-tag: ${{ steps.version.outputs.NEXT_VERSION }}
           include-major: true
           include-latest: false
 
