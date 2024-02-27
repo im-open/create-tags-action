@@ -27,10 +27,10 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Setup Node.js 16
-        uses: actions/setup-node@v3
+      - name: Setup node env 📦
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20.x
           cache: npm
 
       - name: npm ci 🚀
@@ -51,9 +51,8 @@ jobs:
       - name: Get the next version for the readme if there are code changes to the action
         if: steps.action-code.outputs.HAS_CHANGES == 'true'
         id: version
-        uses: im-open/git-version-lite@v2
+        uses: im-open/git-version-lite@v3
         with:
-          create-ref: false
           default-release-type: major
 
       - name: Comment on PR with release version ${{ steps.version.outputs.NEXT_VERSION }}
@@ -89,7 +88,7 @@ jobs:
 
       - name: Upload dist folder as artifact on commit failure
         if: failure() && steps.commit-changes.outcome == 'failure'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: ./dist
