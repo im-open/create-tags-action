@@ -25314,7 +25314,7 @@ var github = __toESM(require_github());
 // src/version-utils.ts
 var import_semver = __toESM(require_semver2());
 function isStableSemver(value) {
-  return import_semver.default.parse(value)?.prerelease.length === 0;
+  return import_semver.default.parse(value)?.prerelease.length === 0 || false;
 }
 function isValidAndStableSemver(value) {
   const parsed = import_semver.default.parse(value);
@@ -25649,4 +25649,3 @@ undici/lib/fetch/body.js:
 undici/lib/websocket/frame.js:
   (*! ws. MIT License. Einar Otto Stangvik <einaros@gmail.com> *)
 */
-//# sourceMappingURL=index.js.map

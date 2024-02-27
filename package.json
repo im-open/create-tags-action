@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "husky",
     "start": "npm install && npm run build",
-    "build": "esbuild ./src --outfile=dist/index.js --bundle --platform=node --sourcemap",
+    "build": "esbuild ./src --outfile=dist/index.js --bundle --platform=node",
     "test": "jest .",
     "test:watch": "jest . --watch",
     "format": "prettier --write **/*.ts",
