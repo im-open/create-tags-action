@@ -3,8 +3,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/tests.yml'
-      - '/src/**'
-      - 'action.yml'
+      - 'dist/**'
+      - 'src/**'
       - 'package-lock.json'
       - 'package.json'
 
