@@ -36,7 +36,7 @@ jobs:
       # on a pull_request_target.  But we need to be extra careful not to trigger any script
       # that may operate on PR controlled contents like in the case of npm install.
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
@@ -45,17 +45,15 @@ jobs:
       # See https://github.com/im-open/git-version-lite for more details around how to increment
       # major/minor/patch through commit messages
       - name: Increment the version
-        uses: im-open/git-version-lite@v2
+        uses: im-open/git-version-lite@v3
         id: version
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           default-release-type: major
 
       - name: Create version tag, create or update major, minor, and latest tags
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
           target-tag: ${{ steps.version.outputs.NEXT_VERSION }}
           include-major: true
           include-major-minor: true

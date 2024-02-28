@@ -1,7 +1,7 @@
 import semver from 'semver';
 
 export function isStableSemver(value: string) {
-  return semver.parse(value)?.prerelease.length === 0 ?? false;
+  return semver.parse(value)?.prerelease.length === 0 || false;
 }
 
 function isValidAndStableSemver(value: string) {
