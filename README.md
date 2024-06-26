@@ -25,20 +25,23 @@ Creates or updates tags. Easily generate additional major `v1` and `latest` tags
 
 ## Inputs
 
-| Parameter                    | Is Required | Default | Description                                                                                                                                                                 |
-| ---------------------------- | ----------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `github-token`               | true        |         | Token required to get an authenticated Octokit.                                                                                                                             |
-| `sha`                        | false       |         | SHA to reference by the `target-tag` and `additional-target-tags`. If not provided, gets the referenced SHA from the `source-tag` or defaults to the current context`s SHA. |
-| `source-tag`                 | false       |         | Tag to reference when generating the target tag(s). The `sha` will override the `source-tag`. The tag cannot have an associated pre-release                                 |
-| `target-tag`                 | false       |         | Tag to create based off of the `source-tag` or `sha`. The tag cannot have an associated release.                                                                            |
-| `additional-target-tags`     | false       |         | List of tags to create based off of the `source-tag` or `sha`.                                                                                                              |
-| `include-major`              | false       | `true`  | Create a tag of just the major from the `source-tag`. _v1.2.3 = v1_                                                                                                         |
-| `include-major-minor`        | false       | `false` | Create a tag of just the major and minor from the `source-tag`. _v1.2.3 = v1_                                                                                               |
-| `include-latest`             | false       | `false` | Create a tag named `latest`                                                                                                                                                 |
-| `force-target`               | false       | `false` | Overwrite the `target-tag` if it already exists                                                                                                                             |
-| `force-additional-targets`   | false       | `true`  | Overwrite the target tags in the `additional-taget-tags` input if it already exists                                                                                         |
-| `fail-on-invalid-version`    | false       | `true`  | Forces semver validation check on the `source-tag` and `target-tag`                                                                                                         |
-| `fail-on-associated-release` | false       | `true`  | Do not allow a target tags to reference a release                                                                                                                           |
+> [!WARNING]
+> If performing a square or rebase merge, pass in the sha `github.sha` instead of having the action fallback the PR's head sha.
+
+| Parameter                    | Is Required | Default | Description                                                                                                                                                                                       |
+| ---------------------------- | ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github-token`               | true        |         | Token required to get an authenticated Octokit.                                                                                                                                                   |
+| `sha`                        | false       |         | SHA to reference by the `target-tag` and `additional-target-tags`. If not provided, gets the referenced SHA from the `source-tag` or defaults to the current context`s SHA (if PR, the head sha). |
+| `source-tag`                 | false       |         | Tag to reference when generating the target tag(s). The `sha` will override the `source-tag`. The tag cannot have an associated pre-release                                                       |
+| `target-tag`                 | false       |         | Tag to create based off of the `source-tag` or `sha`. The tag cannot have an associated release.                                                                                                  |
+| `additional-target-tags`     | false       |         | List of tags to create based off of the `source-tag` or `sha`.                                                                                                                                    |
+| `include-major`              | false       | `true`  | Create a tag of just the major from the `source-tag`. _v1.2.3 = v1_                                                                                                                               |
+| `include-major-minor`        | false       | `false` | Create a tag of just the major and minor from the `source-tag`. _v1.2.3 = v1_                                                                                                                     |
+| `include-latest`             | false       | `false` | Create a tag named `latest`                                                                                                                                                                       |
+| `force-target`               | false       | `false` | Overwrite the `target-tag` if it already exists                                                                                                                                                   |
+| `force-additional-targets`   | false       | `true`  | Overwrite the target tags in the `additional-taget-tags` input if it already exists                                                                                                               |
+| `fail-on-invalid-version`    | false       | `true`  | Forces semver validation check on the `source-tag` and `target-tag`                                                                                                                               |
+| `fail-on-associated-release` | false       | `true`  | Do not allow a target tags to reference a release                                                                                                                                                 |
 
 > Additional inputs can be found on the [action definition](https://github.com/im-open/create-tags-action/blob/main/action.yml)
 
