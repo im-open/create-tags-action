@@ -1,3 +1,3 @@
-* @im-open/devops-delta @im-open/devops-delta @bradyclifford
-/.github/CODEOWNERS @im-open/devops-delta @im-open/devops-delta
-/.husky@im-open/devops-delta @im-open/devops-delta @bradyclifford
+* @im-open/devops-delta @bradyclifford
+/.github/CODEOWNERS @im-open/devops-delta
+/.husky @im-open/devops-delta @bradyclifford
