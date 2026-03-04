@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.23",
-    "@babel/preset-env": "^7.23",
+    "@babel/preset-env": "^7.25",
     "@babel/preset-typescript": "^7.23",
     "@octokit/types": "^12.6.0",
     "@tsconfig/recommended": "^1.0.3",
