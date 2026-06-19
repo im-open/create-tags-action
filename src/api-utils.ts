@@ -16,21 +16,30 @@ async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
     return foundTag;
   } catch (e) {
     if ((e as RequestError).status === 404) return null;
-    throw new Error(`Retrieving ref by tag [${tag}] failed with the following error: ${e}`);
+    throw new Error(`Retrieving ref by tag [${tag}] failed`, { cause: e });
   }
 }
 
-export async function tagExists(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function tagExists(
+  octokit: InstanceType<typeof GitHub>,
+  tag: string
+): Promise<boolean> {
   return (await getTag(octokit, tag)) ? true : false;
 }
 
-export async function getShaFromTag(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function getShaFromTag(
+  octokit: InstanceType<typeof GitHub>,
+  tag: string
+): Promise<string> {
   const foundTag = await getTag(octokit, tag);
   if (!foundTag) throw new Error(`The tag [${tag}] does not exist. Unable to get sha.`);
   return foundTag.object.sha;
 }
 
-export async function tagHasRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function tagHasRelease(
+  octokit: InstanceType<typeof GitHub>,
+  tag: string
+): Promise<boolean> {
   const release = await getRelease(octokit, tag);
   return release !== null;
 }
@@ -46,7 +55,7 @@ export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: stri
     return release;
   } catch (e) {
     if ((e as RequestError).status === 404) return null;
-    throw new Error(`Retrieving release by tag [${tag}] failed with the following error: ${e}`);
+    throw new Error(`Retrieving release by tag [${tag}] failed`, { cause: e });
   }
 }
 
@@ -74,6 +83,6 @@ export async function createTag(octokit: InstanceType<typeof GitHub>, tag: Targe
       ref: `refs/tags/${tag}`
     });
   } catch (e) {
-    throw new Error(`Unable to create or upsert tag [${tag}] with the following error: ${e}`);
+    throw new Error(`Unable to create or upsert tag [${tag}]`, { cause: e });
   }
 }

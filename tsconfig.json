@@ -2,11 +2,10 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "baseUrl": ".",
     "strict": true,
     "lib": ["esnext"],
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,

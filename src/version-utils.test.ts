@@ -1,4 +1,5 @@
 import * as system from './version-utils';
+import { describe, expect, it } from '@jest/globals';
 
 describe('Is version stable', () => {
   it('Validate if a version is stable', () => {

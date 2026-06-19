@@ -67,7 +67,7 @@ export default class TargetTag {
 }
 
 export class TargetVersionedTag extends TargetTag {
-  constructor(value: string, options?: TargetTagOptions | undefined) {
+  constructor(value: string, options?: TargetTagOptions) {
     super(value, options);
     if (!isValidSemVer(value)) throw new TypeError(`value [${value}] must be a semver`);
   }

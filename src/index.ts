@@ -2,7 +2,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { GitHub } from '@actions/github/lib/utils';
-import { WebhookPlayloadExtended } from './types';
+import { PullRequestPayloadWithSha } from './types';
 import {
   isValidSemVer,
   getMajor,
@@ -142,7 +142,7 @@ async function resolveSha(octokit: InstanceType<typeof GitHub>) {
   if (!sha) {
     sha =
       github.context.eventName === 'pull_request'
-        ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
+        ? (github.context.payload as unknown as PullRequestPayloadWithSha).pull_request.head.sha
         : github.context.sha;
   }
 

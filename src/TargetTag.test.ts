@@ -1,4 +1,5 @@
 import TargetTag, { TargetVersionedTag } from './TargetTag';
+import { expect, it } from '@jest/globals';
 
 it('Should exist when found', () => {
   const tag = TargetTag.for('v1.2.3');
