@@ -1,8 +1,8 @@
 // https://www.npmjs.com/package/@actions/core
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { GitHub } from '@actions/github/lib/utils';
-import { WebhookPlayloadExtended } from './types';
+import { GitHubOctokit } from './octokit';
+import { PullRequestPayloadWithSha } from './types';
 import {
   isValidSemVer,
   getMajor,
@@ -131,10 +131,10 @@ function provisionTargetTags() {
     .map(([, targetTag]) => targetTag);
 }
 
-async function resolveSha(octokit: InstanceType<typeof GitHub>) {
+async function resolveSha(octokit: GitHubOctokit): Promise<string> {
   if (shaInput) return shaInput;
 
-  let sha;
+  let sha: string | undefined;
   if (sourceTagInput) {
     sha = await getShaFromTag(octokit, sourceTagInput);
   }
@@ -142,11 +142,11 @@ async function resolveSha(octokit: InstanceType<typeof GitHub>) {
   if (!sha) {
     sha =
       github.context.eventName === 'pull_request'
-        ? (github.context.payload as WebhookPlayloadExtended).pull_request.head.sha
+        ? (github.context.payload as unknown as PullRequestPayloadWithSha).pull_request.head.sha
         : github.context.sha;
   }
 
-  return sha;
+  return sha ?? github.context.sha;
 }
 
 async function run() {

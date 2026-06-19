@@ -1,9 +1,9 @@
 import { context } from '@actions/github';
-import { GitHub } from '@actions/github/lib/utils';
 import { RequestError } from '@octokit/types';
 import TargetTag from './TargetTag';
+import { GitHubOctokit } from './octokit';
 
-async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
+async function getTag(octokit: GitHubOctokit, tag: string) {
   if (!tag) throw new TypeError('Tag is empty');
   try {
     // https://octokit.github.io/rest.js/v18#git-get-ref
@@ -20,22 +20,22 @@ async function getTag(octokit: InstanceType<typeof GitHub>, tag: string) {
   }
 }
 
-export async function tagExists(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function tagExists(octokit: GitHubOctokit, tag: string) {
   return (await getTag(octokit, tag)) ? true : false;
 }
 
-export async function getShaFromTag(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function getShaFromTag(octokit: GitHubOctokit, tag: string) {
   const foundTag = await getTag(octokit, tag);
   if (!foundTag) throw new Error(`The tag [${tag}] does not exist. Unable to get sha.`);
   return foundTag.object.sha;
 }
 
-export async function tagHasRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function tagHasRelease(octokit: GitHubOctokit, tag: string) {
   const release = await getRelease(octokit, tag);
   return release !== null;
 }
 
-export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: string) {
+export async function getRelease(octokit: GitHubOctokit, tag: string) {
   if (!tag) throw new TypeError('Tag is empty');
   try {
     const { data: release } = await octokit.rest.repos.getReleaseByTag({
@@ -50,7 +50,7 @@ export async function getRelease(octokit: InstanceType<typeof GitHub>, tag: stri
   }
 }
 
-export async function createTag(octokit: InstanceType<typeof GitHub>, tag: TargetTag, sha: string) {
+export async function createTag(octokit: GitHubOctokit, tag: TargetTag, sha: string) {
   if (!tag) throw new TypeError('Tag is empty');
   if (!tag.upsertable) throw new Error(`Reference tag [${tag}] already exists`);
 

@@ -6,7 +6,7 @@
     "strict": true,
     "lib": ["esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
