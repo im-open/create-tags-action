@@ -25,6 +25,9 @@ on:
 concurrency:
   group: ${{ github.workflow }}
 
+permissions:
+  contents: write
+
 jobs:
   increment-version:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
@@ -36,7 +39,7 @@ jobs:
       # on a pull_request_target.  But we need to be extra careful not to trigger any script
       # that may operate on PR controlled contents like in the case of npm install.
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
@@ -45,7 +48,7 @@ jobs:
       # See https://github.com/im-open/git-version-lite for more details around how to increment
       # major/minor/patch through commit messages
       - name: Increment the version
-        uses: im-open/git-version-lite@v3
+        uses: im-open/git-version-lite@v4
         id: version
         with:
           default-release-type: major
