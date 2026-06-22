@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create various tags from current context's SHA
-        uses: im-open/create-tags-action@v1
+        uses: im-open/create-tags-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target-tag: v1.2.3
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Increment the version
-        uses: im-open/git-version-lite@v2
+        uses: im-open/git-version-lite@v4
         id: version
         with:
           create-ref: true
@@ -95,7 +95,7 @@ jobs:
       # Generates a next version of v1.2.3
 
       - name: Create Major and Latest tags that reference the same SHA as the main tag
-        uses: im-open/create-tags-action@v1
+        uses: im-open/create-tags-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.version.outputs.NEXT_VERSION_SHA }}
